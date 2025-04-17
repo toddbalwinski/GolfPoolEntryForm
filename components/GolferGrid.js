@@ -3,7 +3,7 @@ import golfers from '../data/golfers';
 
 export default function GolferGrid({ picks, onToggle }) {
   return (
-    <fieldset className="grid grid-cols-3 gap-2 border p-4">
+    <fieldset className="grid grid-cols-5 gap-4 justify-items-center border p-4">
       <legend className="font-medium">
         Select exactly 6 golfers (≤ $100 cap)
       </legend>
