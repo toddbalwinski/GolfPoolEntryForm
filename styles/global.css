@@ -1,0 +1,8 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* apply your cream background and default font/text color */
+body {
+  @apply bg-cream text-dark-green font-sans;
+}
