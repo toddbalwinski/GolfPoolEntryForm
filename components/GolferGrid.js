@@ -7,13 +7,13 @@ export default function GolferGrid({ picks, onToggle }) {
       <legend className="font-medium">
         Select exactly 6 golfers (≤ $100 cap)
       </legend>
-      {picks.map(g => {
+      {golfers.map(g => {
         const checked = picks.includes(g.id);
         return (
           <label key={g.id} className="flex items-center space-x-2">
             <input
               type="checkbox"
-              name="picks"
+              name="golfers"
               value={g.id}
               checked={checked}
               onChange={onToggle(g.id)}

@@ -16,7 +16,7 @@ export default async function handler(req, res) {
     r.last_name,
     r.email,
     r.entry_name,
-    `"${r.Picks.join(';')}"`,
+    `"${r.picks.join(';')}"`,
     r.created_at
   ].join(','));
 

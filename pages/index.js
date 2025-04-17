@@ -4,13 +4,13 @@ import golfers from '../data/golfers';
 import GolferGrid from '../components/GolferGrid';
 
 export default function Home() {
-  const [pikcs, setPicks] = useState([]);        // track picked IDs
+  const [picks, setPicks] = useState([]);        // track picked IDs
   const [error, setError] = useState();
 
   // compute total salary
   const totalSalary = useMemo(() => 
     picks.reduce((sum, id) => {
-      const g = picks.find(g=>g.id===id);
+      const g = golfers.find(g=>g.id===id);
       return sum + (g?.salary || 0);
     }, 0)
   , [picks]);
