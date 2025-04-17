@@ -4,32 +4,32 @@ import golfers from '../data/golfers';
 import GolferGrid from '../components/GolferGrid';
 
 export default function Home() {
-  const [picks, setPicks] = useState([]);        // track picked IDs
+  const [golfers, setGolfers] = useState([]);        // track picked IDs
   const [error, setError] = useState();
 
   // compute total salary
   const totalSalary = useMemo(() => 
-    picks.reduce((sum, id) => {
+    golfers.reduce((sum, id) => {
       const g = golfers.find(g=>g.id===id);
       return sum + (g?.salary || 0);
     }, 0)
-  , [picks]);
+  , [golfers]);
 
   const handleToggle = id => e => {
     setError(undefined);
     if (e.target.checked) {
       // only allow up to 6
-      if (picks.length < 6) {
-        setPicks([...picks, id]);
+      if (golfers.length < 6) {
+        setGolfers([...golfers, id]);
       }
     } else {
-      setPicks(picks.filter(pid => pid !== id));
+      setGolfers(golfers.filter(pid => pid !== id));
     }
   };
 
   const handleSubmit = async e => {
     e.preventDefault();
-    if (picks.length !== 6) {
+    if (golfers.length !== 6) {
       return setError('Please pick exactly 6 golfers.');
     }
     if (totalSalary > 100) {
@@ -39,14 +39,14 @@ export default function Home() {
     const res = await fetch('/api/submit', {
       method: 'POST',
       headers: { 'Content-Type':'application/json' },
-      body: JSON.stringify({ first, last, email, entryName, picks })
+      body: JSON.stringify({ first, last, email, entryName, golfers })
     });
     if (!res.ok) {
       const { error } = await res.json();
       return setError(error);
     }
     alert('Entry submitted! Thank you.');
-    setPicks([]);            // reset state
+    setGolfers([]);            // reset state
     e.target.reset();        // reset form fields
   };
 
@@ -57,7 +57,7 @@ export default function Home() {
 
       {/* Live Counter */}
       <p className="mb-2">
-        Picks: <strong>{picks.length}/6</strong> &nbsp;|&nbsp;
+        Golfers: <strong>{golfers.length}/6</strong> &nbsp;|&nbsp;
         Total Salary: <strong>${totalSalary}</strong>/100
       </p>
 
@@ -69,12 +69,12 @@ export default function Home() {
         <input name="email"       type="email" placeholder="Email"      required className="border p-2 w-full" />
         <input name="entryName"   placeholder="Entry Name"         required className="border p-2 w-full" />
 
-        {/* pass picks + toggle into the grid */}
-        <GolferGrid picks={picks} onToggle={handleToggle} />
+        {/* pass golfers + toggle into the grid */}
+        <GolferGrid golfers={golfers} onToggle={handleToggle} />
 
         <button
           type="submit"
-          disabled={picks.length !== 6 || totalSalary > 100}
+          disabled={golfers.length !== 6 || totalSalary > 100}
           className="bg-blue-600 text-white px-4 py-2 rounded disabled:opacity-50"
         >
           Submit Entry
