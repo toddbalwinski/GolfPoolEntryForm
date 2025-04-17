@@ -10,13 +10,13 @@ export default async function handler(req, res) {
   if (error) return res.status(500).send(error.message);
 
   // build CSV
-  const header = ['First','Last','Email','Entry','Golfers','Created'].join(',');
+  const header = ['First','Last','Email','Entry','Picks','Created'].join(',');
   const rows = data.map(r => [
     r.first_name,
     r.last_name,
     r.email,
     r.entry_name,
-    `"${r.Golfers.join(';')}"`,
+    `"${r.Picks.join(';')}"`,
     r.created_at
   ].join(','));
 

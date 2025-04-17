@@ -4,10 +4,10 @@ export default async function handler(req, res) {
   if (req.method !== 'POST')
     return res.status(405).end();
 
-  const { first, last, email, entryName, golfers } = req.body;
+  const { first, last, email, entryName, picks } = req.body;
 
   // server‑side check
-  if (!first || !last || golfers?.length !== 6) {
+  if (!first || !last || picks?.length !== 6) {
     return res.status(400).json({ error: 'Invalid payload.' });
   }
   // (you could re‑compute salary cap here if needed)
