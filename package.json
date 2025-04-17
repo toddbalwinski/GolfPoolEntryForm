@@ -1,16 +1,21 @@
 {
-    "name": "golf-pool-entry",
-    "version": "1.0.0",
-    "scripts": {
-      "dev": "next dev",
-      "build": "next build",
-      "start": "next start"
-    },
-    "dependencies": {
-      "next": "13.5.1",
-      "react": "18.2.0",
-      "react-dom": "18.2.0",
-      "@supabase/supabase-js": "^2.33.0"
-    }
+  "name": "golf-pool-entry",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start"
+  },
+  "dependencies": {
+    "next": "13.5.1",
+    "react": "18.2.0",
+    "react-dom": "18.2.0",
+    "@supabase/supabase-js": "^2.33.0"
+  },
+  "devDependencies": {
+    "tailwindcss": "^3.4.2",
+    "postcss": "^8.4.23",
+    "autoprefixer": "^10.4.14"
   }
-  
+}
