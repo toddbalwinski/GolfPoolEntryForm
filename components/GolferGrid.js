@@ -1,6 +1,5 @@
-import golfers from "../data/golfers";
-
-export default function GolferGrid({ picks, onToggle }) {
+// components/GolferGrid.js
+export default function GolferGrid({ golfers, picks, onToggle }) {
   return (
     <fieldset className="grid grid-cols-4 gap-4 justify-items-center border border-dark-green/50 rounded-lg p-4">
       <legend className="col-span-4 text-sm font-semibold text-dark-green mb-2">
@@ -21,7 +20,7 @@ export default function GolferGrid({ picks, onToggle }) {
               onChange={onToggle(g.id)}
               className="h-4 w-4 text-dark-green border-gray-300 rounded focus:ring-dark-green"
             />
-            <span className={checked ? "font-semibold" : ""}>
+            <span className={checked ? 'font-semibold' : ''}>
               ${g.salary} – {g.name}
             </span>
           </label>
