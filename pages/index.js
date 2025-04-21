@@ -57,6 +57,11 @@ export default function Home() {
     <div className="min-h-screen flex items-center justify-center p-6 bg-cream text-dark-green font-sans">
       <div className="bg-white rounded-2xl shadow-lg w-full max-w-5xl p-8 space-y-6">
 
+        {/* FORM TITLE */}
+        <h1 className="text-3xl font-bold text-dark-green text-center">
+          Golf Pool Entry
+        </h1>
+
         {/* RULES SECTION */}
         <section className="bg-cream border-l-4 border-dark-green p-4 rounded-lg space-y-2">
           <p>
@@ -169,11 +174,6 @@ export default function Home() {
             context to try to run fair and fun pool.
           </p>
         </section>
-
-        {/* FORM TITLE */}
-        <h1 className="text-3xl font-bold text-dark-green text-center">
-          Golf Pool Entry
-        </h1>
 
         {error && <p className="text-red-600">{error}</p>}
 
