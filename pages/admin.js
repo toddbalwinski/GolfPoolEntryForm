@@ -2,19 +2,20 @@
 import { useState, useEffect } from 'react';
 
 export default function Admin() {
-  const [rules, setRules]     = useState('');
-  const [golfers, setGolfers] = useState([]);
-  const [newGf, setNewGf]     = useState({ name: '', salary: 0 });
-  const [loading, setLoading] = useState(true);
+  const [rules, setRules]       = useState('');
+  const [golfers, setGolfers]   = useState([]);
+  // salary is now a string so we can avoid the native spinner
+  const [newGf, setNewGf]       = useState({ name: '', salary: '' });
+  const [loading, setLoading]   = useState(true);
 
   useEffect(() => {
     async function loadAll() {
-      // fetch rules
+      // load rules
       const stRes = await fetch('/api/admin/settings');
       const { settings } = await stRes.json();
       setRules(settings.rules || '');
 
-      // fetch golfers
+      // load golfers
       const gfRes = await fetch('/api/admin/golfers');
       const { golfers: gfData } = await gfRes.json();
       setGolfers(gfData);
@@ -34,15 +35,21 @@ export default function Admin() {
   };
 
   const addGolfer = async () => {
+    // parse salary into an integer
+    const salaryInt = parseInt(newGf.salary, 10);
+    if (!newGf.name || isNaN(salaryInt)) {
+      return alert('Please enter a valid name and numeric salary');
+    }
+
     await fetch('/api/admin/golfers', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(newGf),
+      body: JSON.stringify({ name: newGf.name, salary: salaryInt }),
     });
-    // refresh golfers list
+    // refresh list
     const { golfers: updated } = await (await fetch('/api/admin/golfers')).json();
     setGolfers(updated);
-    setNewGf({ name: '', salary: 0 });
+    setNewGf({ name: '', salary: '' });
   };
 
   const deleteGolfer = async (id) => {
@@ -80,7 +87,7 @@ export default function Admin() {
         </button>
       </section>
 
-      {/* Golfers Table + Add */}
+      {/* Golfers Table */}
       <section className="space-y-4">
         <h2 className="font-semibold">Golfers</h2>
         <table className="w-full table-auto border-collapse">
@@ -112,7 +119,7 @@ export default function Admin() {
         </table>
 
         {/* Add New Golfer */}
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-2 gap-4 mt-4">
           <input
             placeholder="Name"
             value={newGf.name}
@@ -120,12 +127,16 @@ export default function Admin() {
             className="border border-dark-green/50 p-2 rounded-lg"
           />
           <input
-            type="number"
+            type="text"
             placeholder="Salary"
+            inputMode="numeric"
+            pattern="[0-9]*"
             value={newGf.salary}
-            onChange={(e) =>
-              setNewGf({ ...newGf, salary: +e.target.value })
-            }
+            onChange={(e) => {
+              // strip non-digits so only integers
+              const val = e.target.value.replace(/\D/g, '');
+              setNewGf({ ...newGf, salary: val });
+            }}
             className="border border-dark-green/50 p-2 rounded-lg"
           />
         </div>
