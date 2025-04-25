@@ -3,24 +3,30 @@ import { supabaseAdmin } from '../../../lib/supabase';
 
 export default async function handler(req, res) {
   if (req.method === 'GET') {
+    // list all golfers
     const { data, error } = await supabaseAdmin
       .from('golfers')
       .select('*')
-      .order('name', { ascending: true });
+      .order('id', { ascending: true });
     if (error) return res.status(500).json({ error: error.message });
     return res.status(200).json({ golfers: data });
   }
 
   if (req.method === 'POST') {
-    const { id, name, salary } = req.body;
-    if (!id || !name || typeof salary !== 'number') {
-      return res.status(400).json({ error: 'Missing or invalid fields' });
+    // only name & salary; id will come back from DB
+    const { name, salary } = req.body;
+    if (!name || typeof salary !== 'number') {
+      return res.status(400).json({ error: 'Missing name or salary' });
     }
-    const { error } = await supabaseAdmin
+
+    const { data, error } = await supabaseAdmin
       .from('golfers')
-      .upsert([{ id, name, salary }], { onConflict: 'id' });
+      .insert([{ name, salary }])
+      .select('id,name,salary')
+      .single();
+
     if (error) return res.status(500).json({ error: error.message });
-    return res.status(200).json({ success: true });
+    return res.status(200).json({ golfer: data });
   }
 
   if (req.method === 'DELETE') {
