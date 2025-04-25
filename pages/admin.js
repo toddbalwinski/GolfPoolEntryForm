@@ -1,21 +1,22 @@
 // pages/admin.js
 import { useState, useEffect } from 'react';
+import Papa from 'papaparse';
 
 export default function Admin() {
-  const [rules, setRules]       = useState('');
-  const [golfers, setGolfers]   = useState([]);
-  // salary is now a string so we can avoid the native spinner
-  const [newGf, setNewGf]       = useState({ name: '', salary: '' });
-  const [loading, setLoading]   = useState(true);
+  const [rules, setRules] = useState('');
+  const [golfers, setGolfers] = useState([]);
+  const [newGf, setNewGf] = useState({ name: '', salary: '' });
+  const [loading, setLoading] = useState(true);
+  const [csvUploading, setCsvUploading] = useState(false);
 
   useEffect(() => {
     async function loadAll() {
-      // load rules
+      // Fetch rules
       const stRes = await fetch('/api/admin/settings');
       const { settings } = await stRes.json();
       setRules(settings.rules || '');
 
-      // load golfers
+      // Fetch golfers
       const gfRes = await fetch('/api/admin/golfers');
       const { golfers: gfData } = await gfRes.json();
       setGolfers(gfData);
@@ -35,18 +36,16 @@ export default function Admin() {
   };
 
   const addGolfer = async () => {
-    // parse salary into an integer
     const salaryInt = parseInt(newGf.salary, 10);
     if (!newGf.name || isNaN(salaryInt)) {
       return alert('Please enter a valid name and numeric salary');
     }
-
     await fetch('/api/admin/golfers', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ name: newGf.name, salary: salaryInt }),
     });
-    // refresh list
+    // Refresh list
     const { golfers: updated } = await (await fetch('/api/admin/golfers')).json();
     setGolfers(updated);
     setNewGf({ name: '', salary: '' });
@@ -64,7 +63,46 @@ export default function Admin() {
     alert('Entries cleared');
   };
 
-  if (loading) return <p className="p-6">Loading admin…</p>;
+  const handleFile = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    Papa.parse(file, {
+      header: false,       // set to true if your CSV has a header row
+      skipEmptyLines: true,
+      complete: async (results) => {
+        const golfersData = results.data
+          .map((row) => ({
+            name: row[0]?.trim(),
+            salary: parseInt(row[1], 10),
+          }))
+          .filter((g) => g.name && !isNaN(g.salary));
+
+        if (golfersData.length === 0) {
+          return alert('No valid rows found.');
+        }
+
+        setCsvUploading(true);
+        const res = await fetch('/api/admin/golfers/batch', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ golfers: golfersData }),
+        });
+        setCsvUploading(false);
+
+        if (!res.ok) {
+          const { error } = await res.json();
+          return alert('Upload failed: ' + error);
+        }
+
+        const { golfers: newList } = await res.json();
+        setGolfers(newList);
+        alert(`Imported ${golfersData.length} golfers.`);
+      },
+    });
+  };
+
+  if (loading)
+    return <p className="p-6 text-center text-dark-green">Loading admin…</p>;
 
   return (
     <div className="p-8 max-w-4xl mx-auto space-y-8 font-sans text-dark-green">
@@ -85,6 +123,19 @@ export default function Admin() {
         >
           Save Rules
         </button>
+      </section>
+
+      {/* CSV Batch Upload */}
+      <section className="space-y-2">
+        <h2 className="font-semibold">Batch Upload Golfers (CSV)</h2>
+        <input
+          type="file"
+          accept=".csv"
+          onChange={handleFile}
+          disabled={csvUploading}
+          className="border border-dark-green/50 p-2 rounded-lg"
+        />
+        {csvUploading && <p className="text-sm">Uploading…</p>}
       </section>
 
       {/* Golfers Table */}
@@ -133,9 +184,8 @@ export default function Admin() {
             pattern="[0-9]*"
             value={newGf.salary}
             onChange={(e) => {
-              // strip non-digits so only integers
-              const val = e.target.value.replace(/\D/g, '');
-              setNewGf({ ...newGf, salary: val });
+              const digits = e.target.value.replace(/\D/g, '');
+              setNewGf({ ...newGf, salary: digits });
             }}
             className="border border-dark-green/50 p-2 rounded-lg"
           />
