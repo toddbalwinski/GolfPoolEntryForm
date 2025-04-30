@@ -1,5 +1,6 @@
 // pages/index.js
 import { useState, useEffect, useMemo } from 'react';
+import ReactMarkdown from 'react-markdown';
 import { supabase } from '../lib/supabase';
 import GolferGrid from '../components/GolferGrid';
 
@@ -31,16 +32,17 @@ export default function Home() {
   }, []);
 
   const totalSalary = useMemo(
-    () => picks.reduce((sum, id) => {
-      const g = golfers.find((g) => g.id === id);
-      return sum + (g?.salary || 0);
-    }, 0),
+    () =>
+      picks.reduce((sum, id) => {
+        const g = golfers.find((g) => g.id === id);
+        return sum + (g?.salary || 0);
+      }, 0),
     [picks, golfers]
   );
 
   const handleToggle = (id) => (e) => {
     setError(null);
-    setPicks(prev =>
+    setPicks((prev) =>
       e.target.checked
         ? (prev.length < 6 ? [...prev, id] : prev)
         : prev.filter((p) => p !== id)
@@ -58,12 +60,10 @@ export default function Home() {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ first, last, email, entryName, picks }),
     });
-
     if (!res.ok) {
       const { error } = await res.json();
       return setError(error);
     }
-
     alert('Entry submitted! Thank you.');
     setPicks([]);
     e.target.reset();
@@ -84,10 +84,10 @@ export default function Home() {
 
   return (
     <div className="relative h-screen bg-quail-hollow bg-no-repeat bg-contain bg-fixed">
-      {/* static overlay so form is readable */}
+      {/* fixed cream overlay */}
       <div className="absolute inset-0 bg-cream/80" />
 
-      {/* scrollable form viewport */}
+      {/* scrollable form container */}
       <div className="relative h-full overflow-y-auto">
         <div className="max-w-screen-lg mx-auto p-6">
           <div className="bg-white rounded-2xl shadow-lg p-8 space-y-6">
@@ -95,18 +95,15 @@ export default function Home() {
               Golf Pool Entry
             </h1>
 
-            {/* Rules */}
-            <section className="bg-cream border-l-4 border-dark-green p-4 rounded-lg">
-              <div
-                className="prose prose-sm max-w-none text-dark-green"
-                dangerouslySetInnerHTML={{ __html: rules }}
-              />
+            {/* Rules rendered as Markdown */}
+            <section className="prose prose-sm text-dark-green bg-cream border-l-4 border-dark-green p-4 rounded-lg">
+              <ReactMarkdown>{rules}</ReactMarkdown>
             </section>
 
             {error && <p className="text-red-600">{error}</p>}
 
             <form onSubmit={handleSubmit} className="space-y-5">
-              {/* Contact info */}
+              {/* Name & Email */}
               <div className="grid grid-cols-2 gap-4">
                 <input
                   name="first"
@@ -135,13 +132,13 @@ export default function Home() {
                 className="w-full border border-dark-green/50 rounded-lg p-3 placeholder-dark-green/70 focus:outline-none focus:ring-2 focus:ring-dark-green"
               />
 
-              {/* Live counter */}
+              {/* Live Counter */}
               <p className="text-sm">
                 Picks: <strong>{picks.length}/6</strong> &nbsp;|&nbsp; Total Salary:{' '}
                 <strong>${totalSalary}</strong>/100
               </p>
 
-              {/* Golfer grid */}
+              {/* Golfer Grid */}
               <GolferGrid golfers={golfers} picks={picks} onToggle={handleToggle} />
 
               <button
