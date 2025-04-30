@@ -1,17 +1,20 @@
 // tailwind.config.js
 module.exports = {
-    content: [
-      "./pages/**/*.{js,jsx}",
-      "./components/**/*.{js,jsx}",
-    ],
-    theme: {
-      extend: {
-        colors: {
-          cream: "#F8F4ED",
-          "dark-green": "#22543D",
-        },
+  theme: {
+    extend: {
+      colors: {
+        cream: "#F8F4ED",
+        "dark-green": "#22543D",
+      },
+      backgroundImage: {
+        'quail-hollow': "url('/images/quail-hollow.jpg')",
       },
     },
-    plugins: [],
-  };
+  },
+  content: [
+    "./pages/**/*.{js,jsx}",
+    "./components/**/*.{js,jsx}",
+  ],
+  plugins: [],
+};
   
