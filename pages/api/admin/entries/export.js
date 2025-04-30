@@ -17,7 +17,7 @@ export default async function handler(req, res) {
     return res.status(500).json({ error: entryErr.message });
   }
 
-  // 2) Fetch all golfers and build a lookup
+  // 2) Fetch all golfers into a lookup
   const { data: golfers, error: golferErr } = await supabaseAdmin
     .from('golfers')
     .select('id,name,salary');
@@ -35,34 +35,32 @@ export default async function handler(req, res) {
     'Last',
     'Email',
     'Entry',
-    // columns for each of the 6 picks
+    // Golfer/Salary pairs
     ...[1, 2, 3, 4, 5, 6].flatMap((i) => [`Golfer ${i}`, `Salary ${i}`]),
+    'Total Salary',
     'Timestamp',
   ];
   const header = headerCols.join(',');
 
-  // 4) Build rows
+  // 4) Build each row
   const rows = entries.map((e) => {
-    // start with the fixed fields
-    const row = [
-      e.first_name,
-      e.last_name,
-      e.email,
-      e.entry_name,
-    ];
+    const row = [e.first_name, e.last_name, e.email, e.entry_name];
 
-    // for each of the 6 picks, push name and salary (or blanks)
+    // sum up and emit each pick
+    let total = 0;
     for (let i = 0; i < 6; i++) {
-      const pid = e.picks[i];
+      const pid = e.picks?.[i];
       if (pid && golferMap[pid]) {
-        row.push(golferMap[pid].name, golferMap[pid].salary);
+        const info = golferMap[pid];
+        row.push(info.name, info.salary);
+        total += info.salary;
       } else {
         row.push('', '');
       }
     }
 
-    // timestamp at the end
-    row.push(e.created_at);
+    // append total + timestamp
+    row.push(total, e.created_at);
 
     return row.join(',');
   });
@@ -74,5 +72,5 @@ export default async function handler(req, res) {
     'Content-Disposition',
     'attachment; filename="golf-pool-entries.csv"'
   );
-  res.status(200).send(csv);
+  return res.status(200).send(csv);
 }

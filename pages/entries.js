@@ -10,7 +10,7 @@ export default function EntriesPage() {
 
   useEffect(() => {
     async function loadData() {
-      // 1) fetch golfers
+      // fetch golfers for lookup
       const { data: golfers, error: gErr } = await supabase
         .from('golfers')
         .select('id,name,salary');
@@ -24,7 +24,7 @@ export default function EntriesPage() {
         setGolferMap(map);
       }
 
-      // 2) fetch entries
+      // fetch entries
       const { data: ents, error: eErr } = await supabase
         .from('entries')
         .select('first_name,last_name,email,entry_name,picks,created_at')
@@ -90,36 +90,48 @@ export default function EntriesPage() {
                   </Fragment>
                 ))}
 
+                <th className="border px-2 py-1">Total Salary</th>
                 <th className="border px-2 py-1">Timestamp</th>
               </tr>
             </thead>
             <tbody>
               {entries.length > 0 ? (
-                entries.map((e, idx) => (
-                  <tr key={idx}>
-                    <td className="border px-2 py-1">{e.first_name}</td>
-                    <td className="border px-2 py-1">{e.last_name}</td>
-                    <td className="border px-2 py-1">{e.email}</td>
-                    <td className="border px-2 py-1">{e.entry_name}</td>
+                entries.map((e, idx) => {
+                  // compute total salary
+                  const total = (e.picks || [])
+                    .slice(0, 6)
+                    .reduce((sum, pid) => {
+                      const info = golferMap[pid];
+                      return sum + (info?.salary || 0);
+                    }, 0);
 
-                    {[0, 1, 2, 3, 4, 5].map((slot) => {
-                      const pid = e.picks?.[slot];
-                      const info = golferMap[pid] || { name: '', salary: '' };
-                      return (
-                        <Fragment key={slot}>
-                          <td className="border px-2 py-1">{info.name}</td>
-                          <td className="border px-2 py-1">{info.salary}</td>
-                        </Fragment>
-                      );
-                    })}
+                  return (
+                    <tr key={idx}>
+                      <td className="border px-2 py-1">{e.first_name}</td>
+                      <td className="border px-2 py-1">{e.last_name}</td>
+                      <td className="border px-2 py-1">{e.email}</td>
+                      <td className="border px-2 py-1">{e.entry_name}</td>
 
-                    <td className="border px-2 py-1">{e.created_at}</td>
-                  </tr>
-                ))
+                      {[0, 1, 2, 3, 4, 5].map((slot) => {
+                        const pid = e.picks?.[slot];
+                        const info = golferMap[pid] || { name: '', salary: '' };
+                        return (
+                          <Fragment key={slot}>
+                            <td className="border px-2 py-1">{info.name}</td>
+                            <td className="border px-2 py-1">{info.salary}</td>
+                          </Fragment>
+                        );
+                      })}
+
+                      <td className="border px-2 py-1 font-semibold">{total}</td>
+                      <td className="border px-2 py-1">{e.created_at}</td>
+                    </tr>
+                  );
+                })
               ) : (
                 <tr>
                   <td
-                    colSpan={4 + 2 * 6 + 1}
+                    colSpan={4 + 2 * 6 + 2}
                     className="border px-2 py-1 text-center"
                   >
                     No entries yet.
