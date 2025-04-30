@@ -82,7 +82,7 @@ export default function Home() {
   }
 
   return (
-    <div className="relative h-screen bg-quail-hollow bg-no-repeat bg-contain bg-fixed">
+    <div className="relative h-screen bg-quail-hollow bg-no-repeat bg-cover bg-center bg-fixed">
       {/* fixed cream overlay */}
       <div className="absolute inset-0 bg-cream/80" />
 
