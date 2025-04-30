@@ -94,19 +94,22 @@ export default function Home() {
               Golf Pool Entry
             </h1>
 
-            {/* Rules rendered as HTML with single-spacing */}
-            <section className="bg-cream border-l-4 border-dark-green p-4 rounded-lg">
-              <div
-                className="
-                  prose prose-sm 
-                  max-w-none w-full text-dark-green 
-                  leading-snug            /* tighter line-height */
-                  prose-p:mb-1            /* very small space after paragraphs */
-                  prose-li:mb-0           /* no extra space between list items */
-                "
-                dangerouslySetInnerHTML={{ __html: rules }}
-              />
-            </section>
+            {/* Rules rendered full‐width, single‐spaced */}
+           <section className="bg-cream border-l-4 border-dark-green p-4 rounded-lg">
+             <div
+               className="
+                 prose prose-sm 
+                 max-w-none w-full text-dark-green 
+                 leading-snug                 /* tighter line‐height */
+                 prose-p:mb-1                /* small gap after each paragraph */
+                 prose-p:first:mt-0          /* no top margin on first p */
+                 prose-p:last:mb-0           /* no bottom margin on last p */
+                 prose-li:mb-1               /* small gap after each list item */
+                 prose-ul:space-y-0          /* remove extra ul spacing */
+               "
+               dangerouslySetInnerHTML={{ __html: rules }}
+             />
+           </section>
 
             {error && <p className="text-red-600">{error}</p>}
 
