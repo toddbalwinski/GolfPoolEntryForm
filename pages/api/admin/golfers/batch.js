@@ -1,8 +1,6 @@
 // pages/api/admin/golfers/batch.js
 import { supabaseAdmin } from '../../../../lib/supabase';
 
-export const config = { api: { bodyParser: true } };
-
 export default async function handler(req, res) {
   if (req.method !== 'POST')
     return res.status(405).end();
@@ -12,18 +10,23 @@ export default async function handler(req, res) {
     return res.status(400).json({ error: 'No golfers provided' });
   }
 
-  // Validate entries
-  for (let g of golfers) {
-    if (typeof g.name !== 'string' || typeof g.salary !== 'number') {
-      return res.status(400).json({ error: 'Invalid format' });
-    }
-  }
-
-  // Bulk insert
-  const { error, data } = await supabaseAdmin
+  // 1) Insert the batch
+  const { error: insErr } = await supabaseAdmin
     .from('golfers')
     .insert(golfers);
+  if (insErr) {
+    return res.status(500).json({ error: insErr.message });
+  }
 
-  if (error) return res.status(500).json({ error: error.message });
-  res.status(200).json({ golfers: data });
+  // 2) Fetch the _complete_ updated list
+  const { data: allGolfers, error: selErr } = await supabaseAdmin
+    .from('golfers')
+    .select('*')
+    .order('id', { ascending: true });
+  if (selErr) {
+    return res.status(500).json({ error: selErr.message });
+  }
+
+  // 3) Return that full list
+  return res.status(200).json({ golfers: allGolfers });
 }
