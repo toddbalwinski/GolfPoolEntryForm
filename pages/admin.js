@@ -1,6 +1,11 @@
 // pages/admin.js
 import { useState, useEffect } from 'react';
+import dynamic from 'next/dynamic';
+import 'react-quill/dist/quill.snow.css';
 import Papa from 'papaparse';
+
+// Dynamically import so it only runs in the browser
+const ReactQuill = dynamic(() => import('react-quill'), { ssr: false });
 
 export default function Admin() {
   const [rules, setRules]             = useState('');
@@ -9,23 +14,23 @@ export default function Admin() {
   const [loading, setLoading]         = useState(true);
   const [csvUploading, setCsvUploading] = useState(false);
 
-  // load rules + golfers on mount
   useEffect(() => {
     async function loadAll() {
+      // fetch rules
       const stRes = await fetch('/api/admin/settings');
       const { settings } = await stRes.json();
       setRules(settings.rules || '');
 
+      // fetch golfers
       const gfRes = await fetch('/api/admin/golfers');
       const { golfers: gfData } = await gfRes.json();
-      setGolfers(Array.isArray(gfData) ? gfData : []);
+      setGolfers(gfData || []);
 
       setLoading(false);
     }
     loadAll();
   }, []);
 
-  // save rules text
   const saveRules = async () => {
     await fetch('/api/admin/settings', {
       method: 'POST',
@@ -35,7 +40,6 @@ export default function Admin() {
     alert('Rules saved');
   };
 
-  // add one golfer
   const addGolfer = async () => {
     const salaryInt = parseInt(newGf.salary, 10);
     if (!newGf.name || isNaN(salaryInt)) {
@@ -46,20 +50,17 @@ export default function Admin() {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ name: newGf.name, salary: salaryInt }),
     });
-    // refresh list
     const { golfers: updated } = await (await fetch('/api/admin/golfers')).json();
-    setGolfers(Array.isArray(updated) ? updated : []);
+    setGolfers(updated || []);
     setNewGf({ name: '', salary: '' });
   };
 
-  // delete one golfer
   const deleteGolfer = async (id) => {
     if (!confirm(`Delete golfer ID ${id}?`)) return;
     await fetch(`/api/admin/golfers?id=${id}`, { method: 'DELETE' });
     setGolfers(golfers.filter((g) => g.id !== id));
   };
 
-  // clear all entries (submissions)
   const clearEntries = async () => {
     if (!confirm('Clear all entries?')) return;
     const res = await fetch('/api/admin/entries/reset', { method: 'POST' });
@@ -70,19 +71,20 @@ export default function Admin() {
     alert('Entries cleared');
   };
 
-  // clear all golfers
   const clearGolfers = async () => {
     if (!confirm('Delete ALL golfers?')) return;
-    await fetch('/api/admin/golfers/reset', { method: 'POST' });
-    setGolfers([]);  // wipe the UI list
+    const res = await fetch('/api/admin/golfers/reset', { method: 'POST' });
+    if (!res.ok) {
+      const { error } = await res.json();
+      return alert('Failed to clear golfers: ' + error);
+    }
+    setGolfers([]);
     alert('All golfers deleted');
   };
 
-  // CSV batch uploader
   const handleFile = (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
-
     Papa.parse(file, {
       header: false,
       skipEmptyLines: true,
@@ -97,11 +99,9 @@ export default function Admin() {
             salary: parseInt(row[1], 10),
           }))
           .filter((g) => g.name && !isNaN(g.salary));
-
         if (batch.length === 0) {
           return alert('No valid rows found in CSV');
         }
-
         setCsvUploading(true);
         const res = await fetch('/api/admin/golfers/batch', {
           method: 'POST',
@@ -109,13 +109,12 @@ export default function Admin() {
           body: JSON.stringify({ golfers: batch }),
         });
         setCsvUploading(false);
-
         if (!res.ok) {
           const { error } = await res.json();
           return alert('Upload failed: ' + error);
         }
         const { golfers: newList } = await res.json();
-        setGolfers(Array.isArray(newList) ? newList : []);
+        setGolfers(newList || []);
         alert(`Imported ${batch.length} golfers.`);
       },
     });
@@ -129,15 +128,23 @@ export default function Admin() {
     <div className="p-8 max-w-4xl mx-auto space-y-8 font-sans text-dark-green">
       <h1 className="text-2xl font-bold">🏌️‍♂️ Golf Pool Admin</h1>
 
-      {/* Rules */}
+      {/* Rules Editor */}
       <section className="space-y-2">
         <h2 className="font-semibold">Rules Text</h2>
-        <textarea
-          rows={8}
-          className="w-full border border-dark-green/50 p-2 rounded-lg"
-          value={rules}
-          onChange={(e) => setRules(e.target.value)}
-        />
+        <div className="border border-dark-green/50 rounded-lg overflow-hidden">
+          <ReactQuill
+            theme="snow"
+            value={rules}
+            onChange={setRules}
+            modules={{
+              toolbar: [
+                ['bold', 'italic', 'underline', 'strike'],
+                [{ list: 'ordered' }, { list: 'bullet' }],
+                ['link', 'clean'],
+              ],
+            }}
+          />
+        </div>
         <button
           className="bg-dark-green text-white px-4 py-2 rounded-lg"
           onClick={saveRules}
@@ -146,11 +153,12 @@ export default function Admin() {
         </button>
       </section>
 
-      {/* Batch CSV */}
+      {/* CSV Batch Upload */}
       <section className="space-y-2">
         <h2 className="font-semibold">Batch Upload Golfers (CSV)</h2>
         <input
-          type="file" accept=".csv"
+          type="file"
+          accept=".csv"
           onChange={handleFile}
           disabled={csvUploading}
           className="border border-dark-green/50 p-2 rounded-lg"
@@ -193,7 +201,7 @@ export default function Admin() {
           <p className="text-sm">No golfers defined yet</p>
         )}
 
-        {/* Add One Golfer */}
+        {/* Add New Golfer */}
         <div className="grid grid-cols-2 gap-4 mt-4">
           <input
             placeholder="Name"
@@ -221,23 +229,6 @@ export default function Admin() {
           Add Golfer
         </button>
       </section>
-
-      {/* Export Entries */}
-      <section className="space-y-2">
-        <h2 className="font-semibold">Export Entries</h2>
-        <a
-          href="/api/admin/entries/export"
-          target="_blank"
-          rel="noopener"
-          className="inline-block bg-dark-green text-white px-4 py-2 rounded-lg hover:bg-dark-green/90"
-        >
-          Download CSV
-        </a>
-        <p className="text-sm text-gray-600">
-          Opens a CSV you can import into Excel or Sheets.
-        </p>
-      </section>
-
 
       {/* Clear Buttons */}
       <section className="flex space-x-4">

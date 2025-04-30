@@ -1,6 +1,5 @@
 // pages/index.js
 import { useState, useEffect, useMemo } from 'react';
-import ReactMarkdown from 'react-markdown';
 import { supabase } from '../lib/supabase';
 import GolferGrid from '../components/GolferGrid';
 
@@ -97,9 +96,10 @@ export default function Home() {
 
             {/* Rules rendered as Markdown */}
             <section className="bg-cream border-l-4 border-dark-green p-4 rounded-lg">
-              <div className="prose prose-sm max-w-none w-full text-dark-green">
-                <ReactMarkdown>{rules}</ReactMarkdown>
-              </div>
+              <div
+                className="prose prose-sm max-w-none w-full text-dark-green"
+                dangerouslySetInnerHTML={{ __html: rules }}
+              />
             </section>
 
             {error && <p className="text-red-600">{error}</p>}
