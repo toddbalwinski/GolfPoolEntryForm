@@ -96,8 +96,10 @@ export default function Home() {
             </h1>
 
             {/* Rules rendered as Markdown */}
-            <section className="prose prose-sm text-dark-green bg-cream border-l-4 border-dark-green p-4 rounded-lg">
-              <ReactMarkdown>{rules}</ReactMarkdown>
+            <section className="bg-cream border-l-4 border-dark-green p-4 rounded-lg">
+              <div className="prose prose-sm max-w-none w-full text-dark-green">
+                <ReactMarkdown>{rules}</ReactMarkdown>
+              </div>
             </section>
 
             {error && <p className="text-red-600">{error}</p>}
