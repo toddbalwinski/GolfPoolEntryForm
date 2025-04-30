@@ -1,12 +1,12 @@
 // pages/entries.js
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Fragment } from 'react';
 import { supabase } from '../lib/supabase';
 
 export default function EntriesPage() {
-  const [entries, setEntries]       = useState([]);
-  const [golferMap, setGolferMap]   = useState({});
-  const [loading, setLoading]       = useState(true);
-  const [clearing, setClearing]     = useState(false);
+  const [entries, setEntries]     = useState([]);
+  const [golferMap, setGolferMap] = useState({});
+  const [loading, setLoading]     = useState(true);
+  const [clearing, setClearing]   = useState(false);
 
   useEffect(() => {
     async function loadData() {
@@ -16,14 +16,13 @@ export default function EntriesPage() {
         .select('id,name,salary');
       if (gErr) {
         console.error('Error loading golfers', gErr);
-        return;
+      } else {
+        const map = {};
+        golfers.forEach((g) => {
+          map[String(g.id)] = { name: g.name, salary: g.salary };
+        });
+        setGolferMap(map);
       }
-      // build id→{name,salary}
-      const map = {};
-      golfers.forEach((g) => {
-        map[String(g.id)] = { name: g.name, salary: g.salary };
-      });
-      setGolferMap(map);
 
       // 2) fetch entries
       const { data: ents, error: eErr } = await supabase
@@ -32,9 +31,10 @@ export default function EntriesPage() {
         .order('created_at', { ascending: false });
       if (eErr) {
         console.error('Error loading entries', eErr);
-        return;
+      } else {
+        setEntries(ents);
       }
-      setEntries(ents);
+
       setLoading(false);
     }
     loadData();
@@ -82,38 +82,46 @@ export default function EntriesPage() {
                 <th className="border px-2 py-1">Last</th>
                 <th className="border px-2 py-1">Email</th>
                 <th className="border px-2 py-1">Entry</th>
-                {[1,2,3,4,5,6].flatMap(i => (
+
+                {[1, 2, 3, 4, 5, 6].flatMap((i) => (
                   <Fragment key={i}>
                     <th className="border px-2 py-1">Golfer {i}</th>
                     <th className="border px-2 py-1">Salary {i}</th>
                   </Fragment>
                 ))}
+
                 <th className="border px-2 py-1">Timestamp</th>
               </tr>
             </thead>
             <tbody>
-              {entries.map((e, idx) => (
-                <tr key={idx}>
-                  <td className="border px-2 py-1">{e.first_name}</td>
-                  <td className="border px-2 py-1">{e.last_name}</td>
-                  <td className="border px-2 py-1">{e.email}</td>
-                  <td className="border px-2 py-1">{e.entry_name}</td>
-                  {[0,1,2,3,4,5].map((slot) => {
-                    const pid = e.picks?.[slot];
-                    const info = golferMap[pid] || { name: '', salary: '' };
-                    return (
-                      <Fragment key={slot}>
-                        <td className="border px-2 py-1">{info.name}</td>
-                        <td className="border px-2 py-1">{info.salary}</td>
-                      </Fragment>
-                    );
-                  })}
-                  <td className="border px-2 py-1">{e.created_at}</td>
-                </tr>
-              ))}
-              {entries.length === 0 && (
+              {entries.length > 0 ? (
+                entries.map((e, idx) => (
+                  <tr key={idx}>
+                    <td className="border px-2 py-1">{e.first_name}</td>
+                    <td className="border px-2 py-1">{e.last_name}</td>
+                    <td className="border px-2 py-1">{e.email}</td>
+                    <td className="border px-2 py-1">{e.entry_name}</td>
+
+                    {[0, 1, 2, 3, 4, 5].map((slot) => {
+                      const pid = e.picks?.[slot];
+                      const info = golferMap[pid] || { name: '', salary: '' };
+                      return (
+                        <Fragment key={slot}>
+                          <td className="border px-2 py-1">{info.name}</td>
+                          <td className="border px-2 py-1">{info.salary}</td>
+                        </Fragment>
+                      );
+                    })}
+
+                    <td className="border px-2 py-1">{e.created_at}</td>
+                  </tr>
+                ))
+              ) : (
                 <tr>
-                  <td colSpan={4 + 2*6 + 1} className="border px-2 py-1 text-center">
+                  <td
+                    colSpan={4 + 2 * 6 + 1}
+                    className="border px-2 py-1 text-center"
+                  >
                     No entries yet.
                   </td>
                 </tr>
