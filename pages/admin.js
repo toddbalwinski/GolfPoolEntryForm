@@ -62,7 +62,11 @@ export default function Admin() {
   // clear all entries (submissions)
   const clearEntries = async () => {
     if (!confirm('Clear all entries?')) return;
-    await fetch('/api/admin/entries/reset', { method: 'POST' });
+    const res = await fetch('/api/admin/entries/reset', { method: 'POST' });
+    if (!res.ok) {
+      const { error } = await res.json();
+      return alert('Failed to clear entries: ' + error);
+    }
     alert('Entries cleared');
   };
 
