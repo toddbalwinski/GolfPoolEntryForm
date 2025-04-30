@@ -84,7 +84,7 @@ export default function Home() {
   return (
     <div className="relative h-screen bg-quail-hollow bg-no-repeat bg-cover bg-center bg-fixed">
       {/* fixed cream overlay */}
-      <div className="absolute inset-0 bg-cream/80" />
+      {/* <div className="absolute inset-0 bg-cream/80" /> */}
 
       {/* scrollable form container */}
       <div className="relative h-full overflow-y-auto">
