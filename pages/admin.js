@@ -218,6 +218,23 @@ export default function Admin() {
         </button>
       </section>
 
+      {/* Export Entries */}
+      <section className="space-y-2">
+        <h2 className="font-semibold">Export Entries</h2>
+        <a
+          href="/api/admin/entries/export"
+          target="_blank"
+          rel="noopener"
+          className="inline-block bg-dark-green text-white px-4 py-2 rounded-lg hover:bg-dark-green/90"
+        >
+          Download CSV
+        </a>
+        <p className="text-sm text-gray-600">
+          Opens a CSV you can import into Excel or Sheets.
+        </p>
+      </section>
+
+
       {/* Clear Buttons */}
       <section className="flex space-x-4">
         <button
