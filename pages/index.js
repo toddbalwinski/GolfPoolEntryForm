@@ -7,7 +7,6 @@ export default function Home() {
   const [bgImage, setBgImage]       = useState('/images/quail-hollow.jpg');
   const [formTitle, setFormTitle]   = useState('Golf Pool Entry Form');
   const [rules, setRules]           = useState('');
-  const [rulesFontSize, setRulesFontSize] = useState('16');
   const [golfers, setGolfers]       = useState([]);
   const [picks, setPicks]           = useState([]);
   const [error, setError]           = useState(null);
@@ -19,40 +18,32 @@ export default function Home() {
       const { data: bgSetting } = await supabase
         .from('settings')
         .select('value')
-        .eq('key','background_image')
+        .eq('key', 'background_image')
         .single();
-      if(bgSetting?.value) setBgImage(bgSetting.value);
+      if (bgSetting?.value) setBgImage(bgSetting.value);
 
       // form title
       const { data: ftSetting } = await supabase
         .from('settings')
         .select('value')
-        .eq('key','form_title')
+        .eq('key', 'form_title')
         .single();
-      if(ftSetting?.value) setFormTitle(ftSetting.value);
+      if (ftSetting?.value) setFormTitle(ftSetting.value);
 
-      // rules
+      // rules HTML
       const { data: rSetting } = await supabase
         .from('settings')
         .select('value')
-        .eq('key','rules')
+        .eq('key', 'rules')
         .single();
-      setRules(rSetting?.value||'');
+      setRules(rSetting?.value || '');
 
-      // rules font size
-      const { data: fsSetting } = await supabase
-        .from('settings')
-        .select('value')
-        .eq('key','rules_font_size')
-        .single();
-      if(fsSetting?.value) setRulesFontSize(fsSetting.value);
-
-      // golfers
+      // golfers in ID order
       const { data: gf } = await supabase
         .from('golfers')
         .select('*')
-        .order('id',{ascending:true});
-      setGolfers(gf||[]);
+        .order('id', { ascending: true });
+      setGolfers(gf || []);
 
       setLoading(false);
     }
@@ -60,45 +51,52 @@ export default function Home() {
   }, []);
 
   const totalSalary = useMemo(
-    () => picks.reduce((sum,id)=>{
-      const g=golfers.find(g=>g.id===id);
-      return sum+(g?.salary||0);
-    },0),
-    [picks,golfers]
+    () =>
+      picks.reduce((sum, id) => {
+        const g = golfers.find(g => g.id === id);
+        return sum + (g?.salary || 0);
+      }, 0),
+    [picks, golfers]
   );
 
   const handleToggle = id => e => {
     setError(null);
-    setPicks(prev=>
+    setPicks(prev =>
       e.target.checked
-        ? (prev.length<6? [...prev,id]:prev)
-        : prev.filter(p=>p!==id)
+        ? (prev.length < 6 ? [...prev, id] : prev)
+        : prev.filter(p => p !== id)
     );
   };
 
   const handleSubmit = async e => {
     e.preventDefault();
-    if(picks.length!==6) return setError('Pick exactly 6 golfers.');
-    if(totalSalary>100) return setError(`Salary cap exceeded: $${totalSalary}`);
+    if (picks.length !== 6) {
+      return setError('Please pick exactly 6 golfers.');
+    }
+    if (totalSalary > 100) {
+      return setError(`Salary cap exceeded: $${totalSalary}`);
+    }
 
-    const { first,last,email,entryName } = Object.fromEntries(new FormData(e.target));
-    const res=await fetch('/api/submit',{method:'POST',
-      headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({first,last,email,entryName,picks})
+    const { first, last, email, entryName } = Object.fromEntries(new FormData(e.target));
+    const res = await fetch('/api/submit', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ first, last, email, entryName, picks })
     });
-    if(!res.ok){
-      const{error}=await res.json();
+    if (!res.ok) {
+      const { error } = await res.json();
       return setError(error);
     }
-    alert('Entry submitted!');
-    setPicks([]); e.target.reset();
+    alert('Entry submitted! Thank you.');
+    setPicks([]);
+    e.target.reset();
   };
 
-  if(loading){
+  if (loading) {
     return (
       <div
         className="relative h-screen bg-no-repeat bg-cover bg-center bg-fixed"
-        style={{backgroundImage:`url('${bgImage}')`}}
+        style={{ backgroundImage: `url('${bgImage}')` }}
       >
         <div className="absolute inset-0 bg-cream/80" />
         <div className="relative h-full flex items-center justify-center">
@@ -113,7 +111,7 @@ export default function Home() {
   return (
     <div
       className="relative h-screen bg-no-repeat bg-cover bg-center bg-fixed"
-      style={{backgroundImage:`url('${bgImage}')`}}
+      style={{ backgroundImage: `url('${bgImage}')` }}
     >
       <div className="absolute inset-0 bg-cream/80" />
       <div className="relative h-full overflow-y-auto">
@@ -124,11 +122,8 @@ export default function Home() {
               {formTitle}
             </h1>
 
-            {/* Rules with dynamic font size */}
-            <section
-              className="bg-cream p-4 rounded-lg"
-              style={{ fontSize: `${rulesFontSize}px` }}
-            >
+            {/* Rules (rendered from Quill HTML) */}
+            <section className="bg-cream p-4 rounded-lg">
               <div
                 className="
                   prose prose-sm
@@ -144,7 +139,6 @@ export default function Home() {
             {error && <p className="text-red-600">{error}</p>}
 
             <form onSubmit={handleSubmit} className="space-y-5">
-              {/* Contact info */}
               <div className="grid grid-cols-2 gap-4">
                 <input
                   name="first"
@@ -174,13 +168,11 @@ export default function Home() {
                 className="w-full border border-dark-green/50 rounded-lg p-3 placeholder-dark-green/70 focus:outline-none focus:ring-2 focus:ring-dark-green"
               />
 
-              {/* Counter */}
               <p className="text-sm">
                 Picks: <strong>{picks.length}/6</strong> &nbsp;|&nbsp; Total Salary:{' '}
                 <strong>${totalSalary}</strong>/100
               </p>
 
-              {/* Golfer grid */}
               <GolferGrid golfers={golfers} picks={picks} onToggle={handleToggle} />
 
               <button

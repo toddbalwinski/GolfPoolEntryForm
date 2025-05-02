@@ -7,45 +7,61 @@ import Papa from 'papaparse';
 const ReactQuill = dynamic(() => import('react-quill'), { ssr: false });
 
 export default function Admin() {
-  const [formTitle, setFormTitle]       = useState('');
-  const [rules, setRules]               = useState('');
-  const [rulesFontSize, setRulesFontSize] = useState('');
-  const [golfers, setGolfers]           = useState([]);
-  const [newGf, setNewGf]               = useState({ name: '', salary: '' });
-  const [backgrounds, setBackgrounds]   = useState([]);
-  const [activeBg, setActiveBg]         = useState('');
-  const [bgFile, setBgFile]             = useState(null);
+  const [formTitle, setFormTitle]     = useState('');
+  const [rules, setRules]             = useState('');
+  const [golfers, setGolfers]         = useState([]);
+  const [newGf, setNewGf]             = useState({ name: '', salary: '' });
+  const [backgrounds, setBackgrounds] = useState([]);
+  const [activeBg, setActiveBg]       = useState('');
+  const [bgFile, setBgFile]           = useState(null);
 
-  const [loading, setLoading]           = useState(true);
+  const [loading, setLoading]         = useState(true);
   const [csvUploading, setCsvUploading] = useState(false);
   const [uploadingBg, setUploadingBg]   = useState(false);
 
+  // Quill toolbar configuration
+  const modules = {
+    toolbar: [
+      [{ header: [1, 2, 3, false] }],
+      [{ size: ['small', false, 'large', 'huge'] }],
+      ['bold', 'italic', 'underline', 'strike'],
+      [{ list: 'ordered' }, { list: 'bullet' }],
+      ['link', 'image'],
+      ['clean']
+    ]
+  };
+  const formats = [
+    'header', 'size',
+    'bold', 'italic', 'underline', 'strike',
+    'list', 'bullet',
+    'link', 'image'
+  ];
+
   useEffect(() => {
     async function loadAll() {
-      // SETTINGS: title, rules, font size, background
+      // fetch settings
       const stRes = await fetch('/api/admin/settings');
       const { settings } = await stRes.json();
       setFormTitle(settings.form_title || 'Golf Pool Entry Form');
       setRules(settings.rules || '');
-      setRulesFontSize(settings.rules_font_size || '16');
       setActiveBg(settings.background_image || '');
 
-      // GOLFERS
+      // fetch golfers
       const gfRes = await fetch('/api/admin/golfers');
       const { golfers: gfData } = await gfRes.json();
       setGolfers(gfData || []);
 
-      // BACKGROUNDS
+      // fetch backgrounds
       const bgRes = await fetch('/api/admin/backgrounds');
       const { backgrounds: bgList } = await bgRes.json();
-      setBackgrounds(bgList || []);
+      setBackgrounds(bggList || []);
 
       setLoading(false);
     }
     loadAll();
   }, []);
 
-  // Save form title
+  // Save handlers
   const saveFormTitle = async () => {
     await fetch('/api/admin/settings', {
       method:'POST',
@@ -55,9 +71,8 @@ export default function Admin() {
     alert('Form title saved');
   };
 
-  // Save rules HTML
   const saveRules = async () => {
-    await fetch('/api/admin/settings',{
+    await fetch('/api/admin/settings', {
       method:'POST',
       headers:{'Content-Type':'application/json'},
       body: JSON.stringify({ key:'rules', value:rules })
@@ -65,98 +80,121 @@ export default function Admin() {
     alert('Rules saved');
   };
 
-  // Save rules font size
-  const saveRulesFontSize = async () => {
-    await fetch('/api/admin/settings',{
+  // Golfer CRUD
+  const addGolfer = async () => {
+    const salaryInt = parseInt(newGf.salary, 10);
+    if (!newGf.name || isNaN(salaryInt)) {
+      return alert('Enter both name and a numeric salary');
+    }
+    await fetch('/api/admin/golfers', {
       method:'POST',
       headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({ key:'rules_font_size', value:rulesFontSize })
+      body: JSON.stringify({ name:newGf.name, salary:salaryInt })
     });
-    alert('Font size saved');
+    const res = await fetch('/api/admin/golfers');
+    const { golfers: updated } = await res.json();
+    setGolfers(updated || []);
+    setNewGf({ name:'', salary:'' });
   };
 
-  // Add / delete golfers (unchanged)
-  const addGolfer = async () => {
-    const salaryInt = parseInt(newGf.salary,10);
-    if(!newGf.name||isNaN(salaryInt)){return alert('Name+salary needed')}
-    await fetch('/api/admin/golfers',{method:'POST',
-      headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({name:newGf.name,salary:salaryInt})
+  const deleteGolfer = async (id) => {
+    if (!confirm(`Delete golfer #${id}?`)) return;
+    await fetch(`/api/admin/golfers?id=${id}`, { method:'DELETE' });
+    setGolfers(golfers.filter(g => g.id !== id));
+  };
+
+  // CSV batch upload
+  const handleFile = (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    Papa.parse(file, {
+      header: false,
+      skipEmptyLines: true,
+      complete: async (results) => {
+        if (!results || !Array.isArray(results.data)) {
+          return alert('CSV parse failed');
+        }
+        const batch = results.data.map(r => ({
+          name: r[0]?.trim(),
+          salary: parseInt(r[1], 10)
+        })).filter(g => g.name && !isNaN(g.salary));
+        if (batch.length === 0) {
+          return alert('No valid rows');
+        }
+        setCsvUploading(true);
+        const res = await fetch('/api/admin/golfers/batch', {
+          method:'POST',
+          headers:{'Content-Type':'application/json'},
+          body: JSON.stringify({ golfers: batch })
+        });
+        setCsvUploading(false);
+        if (!res.ok) {
+          const { error } = await res.json();
+          return alert('Upload failed: ' + error);
+        }
+        const { golfers: newList } = await res.json();
+        setGolfers(newList || []);
+        alert(`Imported ${batch.length}`);
+      }
     });
-    const { golfers:updated } = await (await fetch('/api/admin/golfers')).json();
-    setGolfers(updated||[]);
-    setNewGf({name:'',salary:''});
-  };
-  const deleteGolfer = async id => {
-    if(!confirm(`Delete golfer #${id}?`))return;
-    await fetch(`/api/admin/golfers?id=${id}`,{method:'DELETE'});
-    setGolfers(golfers.filter(g=>g.id!==id));
   };
 
-  // CSV batch
-  const handleFile = e => {
-    const file = e.target.files?.[0]; if(!file)return;
-    Papa.parse(file,{header:false,skipEmptyLines:true,complete:async results=>{
-      if(!results||!Array.isArray(results.data))return alert('CSV parse failed');
-      const batch = results.data.map(r=>({
-        name:r[0]?.trim(),
-        salary:parseInt(r[1],10)
-      })).filter(g=>g.name&&!isNaN(g.salary));
-      if(batch.length===0)return alert('No valid rows');
-      setCsvUploading(true);
-      const res = await fetch('/api/admin/golfers/batch',{
-        method:'POST',
-        headers:{'Content-Type':'application/json'},
-        body:JSON.stringify({golfers:batch})
-      });
-      setCsvUploading(false);
-      if(!res.ok){const {error}=await res.json();return alert('Upload failed:'+error)}
-      const { golfers:newList }=await res.json();
-      setGolfers(newList||[]);
-      alert(`Imported ${batch.length}`);
-    }});
-  };
-
-  // Clear everything
+  // Clear data
   const clearEntries = async () => {
-    if(!confirm('Clear all entries?'))return;
-    const res = await fetch('/api/admin/entries/reset',{method:'POST'});
-    if(!res.ok){const{error}=await res.json();return alert('Failed:'+error)}
+    if (!confirm('Clear all entries?')) return;
+    const res = await fetch('/api/admin/entries/reset', { method:'POST' });
+    if (!res.ok) {
+      const { error } = await res.json();
+      return alert('Failed to clear entries: ' + error);
+    }
     alert('Entries cleared');
   };
+
   const clearGolfers = async () => {
-    if(!confirm('Delete ALL golfers?'))return;
-    const res=await fetch('/api/admin/golfers/reset',{method:'POST'});
-    if(!res.ok){const{error}=await res.json();return alert('Failed:'+error)}
-    setGolfers([]);alert('Golfers cleared');
+    if (!confirm('Delete ALL golfers?')) return;
+    const res = await fetch('/api/admin/golfers/reset', { method:'POST' });
+    if (!res.ok) {
+      const { error } = await res.json();
+      return alert('Failed to clear golfers: ' + error);
+    }
+    setGolfers([]);
+    alert('Golfers cleared');
   };
 
-  // Background upload & select
+  // Background management
   const uploadBg = async () => {
-    if(!bgFile)return alert('Select image');
+    if (!bgFile) return alert('Select an image');
     setUploadingBg(true);
-    const form = new FormData(); form.append('image',bgFile);
-    const res = await fetch('/api/admin/backgrounds/upload',{method:'POST',body:form});
+    const formData = new FormData();
+    formData.append('image', bgFile);
+    const res = await fetch('/api/admin/backgrounds/upload', {
+      method:'POST', body: formData
+    });
     setUploadingBg(false);
-    if(!res.ok){const{error}=await res.json();return alert('Upload failed:'+error)}
-    const {key,publicUrl}=await res.json();
-    setBackgrounds([{key,publicUrl},...backgrounds]);
+    if (!res.ok) {
+      const { error } = await res.json();
+      return alert('Upload failed: ' + error);
+    }
+    const { key, publicUrl } = await res.json();
+    setBackgrounds([{ key, publicUrl }, ...backgrounds]);
     setBgFile(null);
   };
+
   const saveBgSelection = async () => {
-    await fetch('/api/admin/settings',{method:'POST',
+    await fetch('/api/admin/settings', {
+      method:'POST',
       headers:{'Content-Type':'application/json'},
       body: JSON.stringify({ key:'background_image', value:activeBg })
     });
     alert('Background updated');
   };
 
-  if(loading){
-    return <p className="p-6 text-center">Loading…</p>;
+  if (loading) {
+    return <p className="p-6 text-center">Loading admin…</p>;
   }
 
   return (
-    <div className="p-8 max-w-4xl mx-auto space-y-8 text-dark-green font-sans">
+    <div className="p-8 max-w-4xl mx-auto space-y-8 font-sans text-dark-green">
       <h1 className="text-2xl font-bold">🏌️‍♂️ Golf Pool Admin</h1>
 
       {/* Form Title */}
@@ -165,7 +203,7 @@ export default function Admin() {
         <input
           type="text"
           value={formTitle}
-          onChange={e=>setFormTitle(e.target.value)}
+          onChange={e => setFormTitle(e.target.value)}
           className="w-full border border-dark-green/50 p-2 rounded"
         />
         <button
@@ -179,18 +217,13 @@ export default function Admin() {
       {/* Rules Editor */}
       <section className="space-y-2">
         <h2 className="font-semibold">Rules Text</h2>
-        <div className="border border-dark-green/50 rounded overflow-hidden">
+        <div className="border border-dark-green/50 rounded-lg overflow-hidden">
           <ReactQuill
             theme="snow"
             value={rules}
             onChange={setRules}
-            modules={{
-              toolbar:[
-                ['bold','italic','underline','strike'],
-                [{list:'ordered'},{list:'bullet'}],
-                ['link','clean']
-              ]
-            }}
+            modules={modules}
+            formats={formats}
           />
         </div>
         <button
@@ -198,23 +231,6 @@ export default function Admin() {
           className="bg-dark-green text-white px-4 py-2 rounded"
         >
           Save Rules
-        </button>
-      </section>
-
-      {/* Rules Font Size */}
-      <section className="space-y-2">
-        <h2 className="font-semibold">Rules Font Size (px)</h2>
-        <input
-          type="number"
-          value={rulesFontSize}
-          onChange={e=>setRulesFontSize(e.target.value.replace(/\D/g,''))}
-          className="w-24 border border-dark-green/50 p-2 rounded"
-        />
-        <button
-          onClick={saveRulesFontSize}
-          className="bg-dark-green text-white px-4 py-2 rounded"
-        >
-          Save Font Size
         </button>
       </section>
 
@@ -231,7 +247,7 @@ export default function Admin() {
         {csvUploading && <p>Uploading…</p>}
       </section>
 
-      {/* Golfers Table */}
+      {/* Golfers Table & Controls */}
       <section className="space-y-4">
         <h2 className="font-semibold">Golfers</h2>
         {golfers.length > 0 ? (
@@ -245,16 +261,18 @@ export default function Admin() {
               </tr>
             </thead>
             <tbody>
-              {golfers.map(g=>(
+              {golfers.map(g => (
                 <tr key={g.id}>
                   <td className="border px-3 py-1">{g.id}</td>
                   <td className="border px-3 py-1">{g.name}</td>
                   <td className="border px-3 py-1">${g.salary}</td>
                   <td className="border px-3 py-1">
                     <button
-                      onClick={()=>deleteGolfer(g.id)}
+                      onClick={() => deleteGolfer(g.id)}
                       className="text-red-600 hover:underline"
-                    >Delete</button>
+                    >
+                      Delete
+                    </button>
                   </td>
                 </tr>
               ))}
@@ -267,16 +285,15 @@ export default function Admin() {
           <input
             placeholder="Name"
             value={newGf.name}
-            onChange={e=>setNewGf({...newGf,name:e.target.value})}
+            onChange={e => setNewGf({ ...newFf, name: e.target.value })}
             className="border p-2 rounded"
           />
           <input
-            type="text"
             placeholder="Salary"
-            value={newGf.salary}
             inputMode="numeric"
             pattern="\d*"
-            onChange={e=>setNewGf({...newFf,salary:e.target.value.replace(/\D/g,'')})}
+            value={newGf.salary}
+            onChange={e => setNewFf({ ...newFf, salary: e.target.value.replace(/\D/g,'') })}
             className="border p-2 rounded"
           />
         </div>
@@ -311,7 +328,7 @@ export default function Admin() {
           <input
             type="file"
             accept="image/*"
-            onChange={e=>setBgFile(e.target.files?.[0])}
+            onChange={e => setBgFile(e.target.files?.[0])}
             className="border p-1 rounded"
           />
           <button
@@ -319,24 +336,24 @@ export default function Admin() {
             disabled={uploadingBg}
             className="bg-dark-green text-white px-4 py-1 rounded disabled:opacity-50"
           >
-            {uploadingBg?'Uploading…':'Upload'}
+            {uploadingBg ? 'Uploading…' : 'Upload'}
           </button>
         </div>
         <div className="grid grid-cols-3 gap-4">
-          {backgrounds.map(bg=>(
+          {backgrounds.map(bg => (
             <label key={bg.key} className="border p-2 rounded cursor-pointer">
               <img
                 src={bg.publicUrl}
-                alt=""
                 className="h-24 w-full object-cover rounded"
+                alt=""
               />
               <div className="flex items-center mt-1">
                 <input
                   type="radio"
                   name="activeBg"
                   value={bg.publicUrl}
-                  checked={activeBg===bg.publicUrl}
-                  onChange={()=>setActiveBg(bg.publicUrl)}
+                  checked={activeBg === bg.publicUrl}
+                  onChange={() => setActiveBg(bg.publicUrl)}
                 />
                 <span className="ml-2 truncate">{bg.key}</span>
               </div>
