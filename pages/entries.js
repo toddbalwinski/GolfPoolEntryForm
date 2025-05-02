@@ -9,15 +9,15 @@ export default function Entries() {
 
   useEffect(() => {
     async function load() {
-      // 1) build golfer lookup
+      // Fetch golfers into a lookup map
       const { data: gfList } = await supabase
         .from('golfers')
-        .select('id, name, salary')
+        .select('id,name,salary')
       const map = {}
       gfList.forEach((g) => { map[g.id] = { name: g.name, salary: g.salary } })
       setGMap(map)
 
-      // 2) fetch entries
+      // Fetch entries
       const { data: enList } = await supabase
         .from('entries')
         .select('first_name, last_name, email, entry_name, picks')
@@ -34,42 +34,35 @@ export default function Entries() {
     load()
   }, [])
 
+  // CSV export
   const exportCsv = () => {
     const header = [
-      'First Name','Last Name','Email','Entry Name',
-      ...Array.from({length:6},(_,i)=>`Golfer ${i+1}`),
-      ...Array.from({length:6},(_,i)=>`Salary ${i+1}`),
+      'First Name',
+      'Last Name',
+      'Email',
+      'Entry Name',
+      ...Array.from({ length: 6 }, (_, i) => [`Golfer ${i+1}`, `Salary ${i+1}`]).flat(),
       'Total Salary'
     ]
 
     const rows = entries.map(
       ({ first_name, last_name, email, entry_name, picks }) => {
-        const names = []
-        const sals  = []
+        const out = [ first_name, last_name, email, entry_name ]
         let total = 0
-        picks.forEach((id) => {
+        // interleave name+salary
+        for (let i = 0; i < 6; i++) {
+          const id = picks[i]
           const g = gMap[id] || { name:'', salary:0 }
-          names.push(g.name)
-          sals.push(g.salary)
+          out.push(g.name, g.salary)
           total += g.salary
-        })
-        while (names.length < 6) {
-          names.push(''); sals.push('')
         }
-        return [
-          first_name,
-          last_name,
-          email,
-          entry_name,
-          ...names,
-          ...sals,
-          total
-        ]
+        out.push(total)
+        return out
       }
     )
 
     const csv = [header, ...rows]
-      .map(r => r.map(c => `"${String(c).replace(/"/g,'""')}"`).join(','))
+      .map((r) => r.map((c) => `"${String(c).replace(/"/g,'""')}"`).join(','))
       .join('\r\n')
 
     const blob = new Blob([csv], { type: 'text/csv' })
@@ -81,6 +74,7 @@ export default function Entries() {
     URL.revokeObjectURL(url)
   }
 
+  // clear all entries
   const clearEntries = async () => {
     if (!confirm('Delete ALL entries?')) return
     const { error } = await supabase
@@ -127,46 +121,41 @@ export default function Entries() {
               <th className="border px-2 py-1">Last Name</th>
               <th className="border px-2 py-1">Email</th>
               <th className="border px-2 py-1">Entry Name</th>
+
+              {/* interleaved Golfer/Salary columns */}
               {Array.from({ length: 6 }).map((_, i) => (
-                <th key={`g${i}`} className="border px-2 py-1">
-                  Golfer {i + 1}
-                </th>
+                <React.Fragment key={i}>
+                  <th className="border px-2 py-1">Golfer {i+1}</th>
+                  <th className="border px-2 py-1">Salary {i+1}</th>
+                </React.Fragment>
               ))}
-              {Array.from({ length: 6 }).map((_, i) => (
-                <th key={`s${i}`} className="border px-2 py-1">
-                  Salary {i + 1}
-                </th>
-              ))}
+
               <th className="border px-2 py-1">Total</th>
             </tr>
           </thead>
           <tbody>
-            {entries.map((e, i) => {
+            {entries.map((e, idx) => {
               const { first_name, last_name, email, entry_name, picks } = e
-              const names = []
-              const sals  = []
               let total = 0
-              picks.forEach((id) => {
-                const g = gMap[id] || { name:'', salary:0 }
-                names.push(g.name)
-                sals.push(g.salary)
-                total += g.salary
-              })
-              while (names.length < 6) {
-                names.push(''); sals.push('')
-              }
               return (
-                <tr key={i} className="odd:bg-white even:bg-gray-50">
+                <tr key={idx} className="odd:bg-white even:bg-gray-50">
                   <td className="border px-2 py-1">{first_name}</td>
                   <td className="border px-2 py-1">{last_name}</td>
                   <td className="border px-2 py-1">{email}</td>
                   <td className="border px-2 py-1">{entry_name}</td>
-                  {names.map((n, idx2) => (
-                    <td key={idx2} className="border px-2 py-1">{n}</td>
-                  ))}
-                  {sals.map((s, idx2) => (
-                    <td key={idx2} className="border px-2 py-1">${s}</td>
-                  ))}
+
+                  {/* interleave each pick's name and salary */}
+                  {Array.from({ length: 6 }).map((_, i) => {
+                    const g = gMap[picks[i]] || { name:'', salary:0 }
+                    total += g.salary
+                    return (
+                      <React.Fragment key={i}>
+                        <td className="border px-2 py-1">{g.name}</td>
+                        <td className="border px-2 py-1">${g.salary}</td>
+                      </React.Fragment>
+                    )
+                  })}
+
                   <td className="border px-2 py-1">${total}</td>
                 </tr>
               )
