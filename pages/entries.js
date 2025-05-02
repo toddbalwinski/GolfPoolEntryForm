@@ -3,29 +3,31 @@ import { useState, useEffect } from 'react'
 import { supabase } from '../lib/supabase'
 
 export default function Entries() {
-  const [entries, setEntries]     = useState([])
-  const [gMap, setGMap]           = useState({})
-  const [loading, setLoading]     = useState(true)
+  const [entries, setEntries] = useState([])
+  const [gMap, setGMap] = useState({})
+  const [loading, setLoading] = useState(true)
 
-  // load golfers + entries
   useEffect(() => {
     async function load() {
-      // fetch golfers into a map for quick lookup
+      // 1) load golfers into a lookup map
       const { data: gfList } = await supabase
         .from('golfers')
-        .select('id, name, salary')
-      const map = {}
-      gfList.forEach((g) => { map[g.id] = { name: g.name, salary: g.salary } })
+        .select('id,name,salary')
+      const map = gfList.reduce((m, g) => {
+        m[g.id] = { name: g.name, salary: g.salary }
+        return m
+      }, {})
       setGMap(map)
 
-      // fetch entries
-      const { data: en } = await supabase
+      // 2) load entries
+      const { data: enList } = await supabase
         .from('entries')
         .select('*')
       // parse picks JSON if needed
-      const parsed = en.map((e) => ({
+      const parsed = (enList || []).map((e) => ({
         ...e,
-        picks: typeof e.picks === 'string' ? JSON.parse(e.picks) : e.picks
+        picks:
+          typeof e.picks === 'string' ? JSON.parse(e.picks) : e.picks
       }))
       setEntries(parsed)
       setLoading(false)
@@ -33,38 +35,57 @@ export default function Entries() {
     load()
   }, [])
 
-  // export current table as CSV
+  // build & download CSV
   const exportCsv = () => {
     const header = [
-      'First','Last','Email','Entry Name',
-      ...Array.from({ length: 6 }, (_, i) => `Golfer ${i+1}`),
-      ...Array.from({ length: 6 }, (_, i) => `Salary ${i+1}`),
+      'First Name',
+      'Last Name',
+      'Email',
+      'Entry Name',
+      ...Array.from({ length: 6 }, (_, i) => `Golfer ${i + 1}`),
+      ...Array.from({ length: 6 }, (_, i) => `Salary ${i + 1}`),
       'Total Salary'
     ]
-    const rows = entries.map(({ first, last, email, entryName, picks }) => {
-      const names = []
-      const sals  = []
-      let total = 0
-      picks.forEach((id) => {
-        const g = gMap[id] || { name:'', salary:0 }
-        names.push(g.name)
-        sals.push(g.salary)
-        total += g.salary
-      })
-      // pad to 6
-      while (names.length < 6) { names.push(''); sals.push('') }
-      return [ first, last, email, entryName, ...names, ...sals, total ]
-    })
-    const csv = [ header, ...rows ]
+
+    const rows = entries.map(
+      ({ firstName, lastName, email, entryName, picks }) => {
+        const names = []
+        const sal   = []
+        let total = 0
+        picks.forEach((id) => {
+          const g = gMap[id] || { name: '', salary: 0 }
+          names.push(g.name)
+          sal.push(g.salary)
+          total += g.salary
+        })
+        while (names.length < 6) {
+          names.push('')
+          sal.push('')
+        }
+        return [
+          firstName,
+          lastName,
+          email,
+          entryName,
+          ...names,
+          ...sal,
+          total
+        ]
+      }
+    )
+
+    const csvContent = [header, ...rows]
       .map((r) =>
-        r.map((c) => `"${String(c).replace(/"/g,'""')}"`).join(',')
+        r
+          .map((c) => `"${String(c).replace(/"/g, '""')}"`)
+          .join(',')
       )
       .join('\r\n')
 
-    const blob = new Blob([csv], { type:'text/csv' })
-    const url  = URL.createObjectURL(blob)
-    const a    = document.createElement('a')
-    a.href     = url
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
     a.download = 'entries.csv'
     a.click()
     URL.revokeObjectURL(url)
@@ -72,7 +93,7 @@ export default function Entries() {
 
   // clear all entries
   const clearEntries = async () => {
-    if (!confirm('Are you sure you want to delete ALL entries?')) return
+    if (!confirm('Delete ALL entries?')) return
     const { error } = await supabase
       .from('entries')
       .delete()
@@ -81,7 +102,7 @@ export default function Entries() {
       alert('Error clearing entries: ' + error.message)
     } else {
       setEntries([])
-      alert('All entries cleared')
+      alert('Entries cleared')
     }
   }
 
@@ -90,7 +111,8 @@ export default function Entries() {
   }
 
   return (
-    <div className="p-6 max-w-screen-lg mx-auto space-y-4 bg-cream rounded-lg">
+    <div className="p-6 max-w-screen-lg mx-auto bg-cream rounded-lg space-y-4">
+      {/* header */}
       <div className="flex justify-between items-center">
         <h1 className="text-2xl font-bold text-dark-green">All Entries</h1>
         <div className="space-x-2">
@@ -109,58 +131,96 @@ export default function Entries() {
         </div>
       </div>
 
+      {/* table */}
       <div className="overflow-x-auto">
         <table className="w-full table-auto border-collapse">
           <thead>
             <tr className="bg-white">
-              <th className="border px-2 py-1">First</th>
-              <th className="border px-2 py-1">Last</th>
-              <th className="border px-2 py-1">Email</th>
-              <th className="border px-2 py-1">Entry Name</th>
-
+              <th className="border border-dark-green/50 px-2 py-1">First Name</th>
+              <th className="border border-dark-green/50 px-2 py-1">Last Name</th>
+              <th className="border border-dark-green/50 px-2 py-1">Email</th>
+              <th className="border border-dark-green/50 px-2 py-1">Entry Name</th>
               {Array.from({ length: 6 }).map((_, i) => (
-                <th key={`g${i}`} className="border px-2 py-1">{`Golfer ${i+1}`}</th>
+                <th
+                  key={`g${i}`}
+                  className="border border-dark-green/50 px-2 py-1"
+                >
+                  Golfer {i + 1}
+                </th>
               ))}
               {Array.from({ length: 6 }).map((_, i) => (
-                <th key={`s${i}`} className="border px-2 py-1">{`Salary ${i+1}`}</th>
+                <th
+                  key={`s${i}`}
+                  className="border border-dark-green/50 px-2 py-1"
+                >
+                  Salary {i + 1}
+                </th>
               ))}
-
-              <th className="border px-2 py-1">Total</th>
+              <th className="border border-dark-green/50 px-2 py-1">Total</th>
             </tr>
           </thead>
 
           <tbody>
             {entries.map((e, idx) => {
-              const { first, last, email, entryName, picks } = e
+              const {
+                firstName,
+                lastName,
+                email,
+                entryName,
+                picks
+              } = e
               const names = []
-              const sals  = []
+              const sal   = []
               let total = 0
               picks.forEach((id) => {
-                const g = gMap[id] || { name:'', salary:0 }
+                const g = gMap[id] || { name: '', salary: 0 }
                 names.push(g.name)
-                sals.push(g.salary)
+                sal.push(g.salary)
                 total += g.salary
               })
-              while (names.length < 6) { names.push(''); sals.push('') }
+              while (names.length < 6) {
+                names.push('')
+                sal.push('')
+              }
 
               return (
                 <tr
                   key={idx}
                   className="odd:bg-white even:bg-gray-50"
                 >
-                  <td className="border px-2 py-1">{first}</td>
-                  <td className="border px-2 py-1">{last}</td>
-                  <td className="border px-2 py-1">{email}</td>
-                  <td className="border px-2 py-1">{entryName}</td>
+                  <td className="border border-dark-green/50 px-2 py-1">
+                    {firstName}
+                  </td>
+                  <td className="border border-dark-green/50 px-2 py-1">
+                    {lastName}
+                  </td>
+                  <td className="border border-dark-green/50 px-2 py-1">
+                    {email}
+                  </td>
+                  <td className="border border-dark-green/50 px-2 py-1">
+                    {entryName}
+                  </td>
 
                   {names.map((n, i) => (
-                    <td key={i} className="border px-2 py-1">{n}</td>
+                    <td
+                      key={i}
+                      className="border border-dark-green/50 px-2 py-1"
+                    >
+                      {n}
+                    </td>
                   ))}
-                  {sals.map((s, i) => (
-                    <td key={i} className="border px-2 py-1">${s}</td>
+                  {sal.map((s, i) => (
+                    <td
+                      key={i}
+                      className="border border-dark-green/50 px-2 py-1"
+                    >
+                      ${s}
+                    </td>
                   ))}
 
-                  <td className="border px-2 py-1">${total}</td>
+                  <td className="border border-dark-green/50 px-2 py-1">
+                    ${total}
+                  </td>
                 </tr>
               )
             })}
