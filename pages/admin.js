@@ -53,34 +53,31 @@ export default function Admin() {
       const BgStyle = Quill.import('attributors/style/background')
       Quill.register(BgStyle, true)
     }
-    async function loadAll() {
-      // settings
-      const stRes = await fetch('/api/admin/settings')
-      const { settings } = await stRes.json()
-      setFormTitle(settings.form_title || 'Golf Pool Entry Form')
-      setRules(settings.rules || '')
-      setActiveBg(settings.background_image || '')
+    const [loading, setLoading] = useState(true)
+    const [settings, setSettings] = useState({})
+    const [backgrounds, setBackgrounds] = useState([])
 
-      // backgrounds list
-      // instead of reading from settings table:
-      const { data: files, error: listErr } = await supabase
-      .storage
-      .from('backgrounds')
-      .list('', { sortBy: { column: 'name', order: 'desc' } })
-      if (listErr) throw listErr
+    useEffect(() => {
+      async function loadAll() {
+        try {
+          // fetch settings
+          const st = await fetch('/api/admin/settings')
+          const { settings: s } = await st.json()
+          setSettings(s)
 
-      const bgList = files.map(file => {
-        const { publicUrl } = supabase
-          .storage
-          .from('backgrounds')
-          .getPublicUrl(file.name)
-        return { key: file.name, publicUrl }
-      })
-
-      setBackgrounds(bgList)
-
-    }
-    loadAll()
+          // fetch backgrounds
+          const bg = await fetch('/api/admin/backgrounds')
+          const { backgrounds: bgs } = await bg.json()
+          setBackgrounds(bgs)
+        } catch (e) {
+          console.error('Admin load error:', e)
+          alert('Failed to load admin data, check console')
+        } finally {
+          setLoading(false)
+        }
+      }
+      loadAll()
+    }, [])
   }, [])
 
   // ── Handlers
