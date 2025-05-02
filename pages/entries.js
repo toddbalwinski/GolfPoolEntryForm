@@ -4,30 +4,29 @@ import { supabase } from '../lib/supabase'
 
 export default function Entries() {
   const [entries, setEntries] = useState([])
-  const [gMap, setGMap] = useState({})
+  const [gMap, setGMap]       = useState({})
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     async function load() {
-      // 1) load golfers into a lookup map
+      // 1) build golfer lookup
       const { data: gfList } = await supabase
         .from('golfers')
-        .select('id,name,salary')
-      const map = gfList.reduce((m, g) => {
-        m[g.id] = { name: g.name, salary: g.salary }
-        return m
-      }, {})
+        .select('id, name, salary')
+      const map = {}
+      gfList.forEach((g) => { map[g.id] = { name: g.name, salary: g.salary } })
       setGMap(map)
 
-      // 2) load entries
+      // 2) fetch entries
       const { data: enList } = await supabase
         .from('entries')
-        .select('*')
-      // parse picks JSON if needed
+        .select('first_name, last_name, email, entry_name, picks')
       const parsed = (enList || []).map((e) => ({
         ...e,
         picks:
-          typeof e.picks === 'string' ? JSON.parse(e.picks) : e.picks
+          typeof e.picks === 'string'
+            ? JSON.parse(e.picks)
+            : e.picks
       }))
       setEntries(parsed)
       setLoading(false)
@@ -35,63 +34,53 @@ export default function Entries() {
     load()
   }, [])
 
-  // build & download CSV
   const exportCsv = () => {
     const header = [
-      'First Name',
-      'Last Name',
-      'Email',
-      'Entry Name',
-      ...Array.from({ length: 6 }, (_, i) => `Golfer ${i + 1}`),
-      ...Array.from({ length: 6 }, (_, i) => `Salary ${i + 1}`),
+      'First Name','Last Name','Email','Entry Name',
+      ...Array.from({length:6},(_,i)=>`Golfer ${i+1}`),
+      ...Array.from({length:6},(_,i)=>`Salary ${i+1}`),
       'Total Salary'
     ]
 
     const rows = entries.map(
-      ({ firstName, lastName, email, entryName, picks }) => {
+      ({ first_name, last_name, email, entry_name, picks }) => {
         const names = []
-        const sal   = []
+        const sals  = []
         let total = 0
         picks.forEach((id) => {
-          const g = gMap[id] || { name: '', salary: 0 }
+          const g = gMap[id] || { name:'', salary:0 }
           names.push(g.name)
-          sal.push(g.salary)
+          sals.push(g.salary)
           total += g.salary
         })
         while (names.length < 6) {
-          names.push('')
-          sal.push('')
+          names.push(''); sals.push('')
         }
         return [
-          firstName,
-          lastName,
+          first_name,
+          last_name,
           email,
-          entryName,
+          entry_name,
           ...names,
-          ...sal,
+          ...sals,
           total
         ]
       }
     )
 
-    const csvContent = [header, ...rows]
-      .map((r) =>
-        r
-          .map((c) => `"${String(c).replace(/"/g, '""')}"`)
-          .join(',')
-      )
+    const csv = [header, ...rows]
+      .map(r => r.map(c => `"${String(c).replace(/"/g,'""')}"`).join(','))
       .join('\r\n')
 
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' })
-    const url = URL.createObjectURL(blob)
-    const a = document.createElement('a')
-    a.href = url
+    const blob = new Blob([csv], { type: 'text/csv' })
+    const url  = URL.createObjectURL(blob)
+    const a    = document.createElement('a')
+    a.href     = url
     a.download = 'entries.csv'
     a.click()
     URL.revokeObjectURL(url)
   }
 
-  // clear all entries
   const clearEntries = async () => {
     if (!confirm('Delete ALL entries?')) return
     const { error } = await supabase
@@ -112,7 +101,6 @@ export default function Entries() {
 
   return (
     <div className="p-6 max-w-screen-lg mx-auto bg-cream rounded-lg space-y-4">
-      {/* header */}
       <div className="flex justify-between items-center">
         <h1 className="text-2xl font-bold text-dark-green">All Entries</h1>
         <div className="space-x-2">
@@ -131,96 +119,55 @@ export default function Entries() {
         </div>
       </div>
 
-      {/* table */}
       <div className="overflow-x-auto">
         <table className="w-full table-auto border-collapse">
           <thead>
             <tr className="bg-white">
-              <th className="border border-dark-green/50 px-2 py-1">First Name</th>
-              <th className="border border-dark-green/50 px-2 py-1">Last Name</th>
-              <th className="border border-dark-green/50 px-2 py-1">Email</th>
-              <th className="border border-dark-green/50 px-2 py-1">Entry Name</th>
+              <th className="border px-2 py-1">First Name</th>
+              <th className="border px-2 py-1">Last Name</th>
+              <th className="border px-2 py-1">Email</th>
+              <th className="border px-2 py-1">Entry Name</th>
               {Array.from({ length: 6 }).map((_, i) => (
-                <th
-                  key={`g${i}`}
-                  className="border border-dark-green/50 px-2 py-1"
-                >
+                <th key={`g${i}`} className="border px-2 py-1">
                   Golfer {i + 1}
                 </th>
               ))}
               {Array.from({ length: 6 }).map((_, i) => (
-                <th
-                  key={`s${i}`}
-                  className="border border-dark-green/50 px-2 py-1"
-                >
+                <th key={`s${i}`} className="border px-2 py-1">
                   Salary {i + 1}
                 </th>
               ))}
-              <th className="border border-dark-green/50 px-2 py-1">Total</th>
+              <th className="border px-2 py-1">Total</th>
             </tr>
           </thead>
-
           <tbody>
-            {entries.map((e, idx) => {
-              const {
-                firstName,
-                lastName,
-                email,
-                entryName,
-                picks
-              } = e
+            {entries.map((e, i) => {
+              const { first_name, last_name, email, entry_name, picks } = e
               const names = []
-              const sal   = []
+              const sals  = []
               let total = 0
               picks.forEach((id) => {
-                const g = gMap[id] || { name: '', salary: 0 }
+                const g = gMap[id] || { name:'', salary:0 }
                 names.push(g.name)
-                sal.push(g.salary)
+                sals.push(g.salary)
                 total += g.salary
               })
               while (names.length < 6) {
-                names.push('')
-                sal.push('')
+                names.push(''); sals.push('')
               }
-
               return (
-                <tr
-                  key={idx}
-                  className="odd:bg-white even:bg-gray-50"
-                >
-                  <td className="border border-dark-green/50 px-2 py-1">
-                    {firstName}
-                  </td>
-                  <td className="border border-dark-green/50 px-2 py-1">
-                    {lastName}
-                  </td>
-                  <td className="border border-dark-green/50 px-2 py-1">
-                    {email}
-                  </td>
-                  <td className="border border-dark-green/50 px-2 py-1">
-                    {entryName}
-                  </td>
-
-                  {names.map((n, i) => (
-                    <td
-                      key={i}
-                      className="border border-dark-green/50 px-2 py-1"
-                    >
-                      {n}
-                    </td>
+                <tr key={i} className="odd:bg-white even:bg-gray-50">
+                  <td className="border px-2 py-1">{first_name}</td>
+                  <td className="border px-2 py-1">{last_name}</td>
+                  <td className="border px-2 py-1">{email}</td>
+                  <td className="border px-2 py-1">{entry_name}</td>
+                  {names.map((n, idx2) => (
+                    <td key={idx2} className="border px-2 py-1">{n}</td>
                   ))}
-                  {sal.map((s, i) => (
-                    <td
-                      key={i}
-                      className="border border-dark-green/50 px-2 py-1"
-                    >
-                      ${s}
-                    </td>
+                  {sals.map((s, idx2) => (
+                    <td key={idx2} className="border px-2 py-1">${s}</td>
                   ))}
-
-                  <td className="border border-dark-green/50 px-2 py-1">
-                    ${total}
-                  </td>
+                  <td className="border px-2 py-1">${total}</td>
                 </tr>
               )
             })}
