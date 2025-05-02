@@ -16,6 +16,7 @@ export default function Admin() {
   const [bgFile, setBgFile]           = useState(null)
   const [uploadingBg, setUploadingBg] = useState(false)
   const [loading, setLoading]         = useState(true)
+  const [settings, setSettings]       = useState({})
 
   // ── Pixel sizes for the size dropdown
   const sizeOptions = [
@@ -53,9 +54,6 @@ export default function Admin() {
       const BgStyle = Quill.import('attributors/style/background')
       Quill.register(BgStyle, true)
     }
-    const [loading, setLoading] = useState(true)
-    const [settings, setSettings] = useState({})
-    const [backgrounds, setBackgrounds] = useState([])
 
     useEffect(() => {
       async function loadAll() {
