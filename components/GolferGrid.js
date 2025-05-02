@@ -1,47 +1,32 @@
 // components/GolferGrid.js
-import React from 'react';
+import React from 'react'
 
 export default function GolferGrid({ golfers, picks, onToggle }) {
   return (
-    <>
-      <div className="mb-2 text-sm">Select Golfers</div>
+    <div className="border border-dark-green rounded-lg p-4 space-y-4">
+      {/* Moved label inside the bordered box */}
+      <p className="text-lg font-semibold text-dark-green">
+        Select Golfers
+      </p>
 
-      {/* outer wrapper: allows horizontal scrolling on small screens */}
-      <div className="border border-dark-green/50 rounded-lg p-4 overflow-x-auto">
-        {/* responsive grid: 1 col xs, 2 col sm, 3 col md, 4 col lg */}
-        <div className="min-w-full grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-          {golfers.map((g) => {
-            const checked = picks.includes(g.id);
-            return (
-              <label
-                key={g.id}
-                className="flex items-center space-x-2 w-full text-sm"
-              >
-                <input
-                  type="checkbox"
-                  checked={checked}
-                  onChange={onToggle(g.id)}
-                  className="h-4 w-4 border-dark-green/50 rounded"
-                />
-                {/* salary then a dash */}
-                <span className="font-mono">
-                  ${g.salary} -
-                </span>
-                {/* golfer name */}
-                <span
-                  className={
-                    checked
-                      ? 'font-semibold'
-                      : ''
-                  }
-                >
-                  {g.name}
-                </span>
-              </label>
-            );
-          })}
-        </div>
+      <div className="grid grid-cols-4 gap-4">
+        {golfers.map((g) => (
+          <label
+            key={g.id}
+            className="flex items-center border border-dark-green/50 rounded-lg p-3 hover:bg-dark-green/5"
+          >
+            <input
+              type="checkbox"
+              checked={picks.includes(g.id)}
+              onChange={onToggle(g.id)}
+              className="mr-3 w-5 h-5 text-dark-green"
+            />
+            <span className="text-dark-green">
+              ${g.salary} – {g.name}
+            </span>
+          </label>
+        ))}
       </div>
-    </>
-  );
+    </div>
+  )
 }
