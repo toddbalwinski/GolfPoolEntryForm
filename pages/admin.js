@@ -42,41 +42,47 @@ export default function Admin() {
     'link', 'image'
   ]
 
-  // ── On mount: register attributors & load data
+  // ── 1) Quill attributor registration (run once on mount)
   useEffect(() => {
-    if (typeof window !== 'undefined') {
-      const Quill = require('react-quill').Quill
-      const SizeStyle = Quill.import('attributors/style/size')
-      SizeStyle.whitelist = sizeOptions
-      Quill.register(SizeStyle, true)
-      const ColorStyle = Quill.import('attributors/style/color')
-      Quill.register(ColorStyle, true)
-      const BgStyle = Quill.import('attributors/style/background')
-      Quill.register(BgStyle, true)
-    }
-
-    useEffect(() => {
-      async function loadAll() {
-        try {
-          // fetch settings
-          const st = await fetch('/api/admin/settings')
-          const { settings: s } = await st.json()
-          setSettings(s)
-
-          // fetch backgrounds
-          const bg = await fetch('/api/admin/backgrounds')
-          const { backgrounds: bgs } = await bg.json()
-          setBackgrounds(bgs)
-        } catch (e) {
-          console.error('Admin load error:', e)
-          alert('Failed to load admin data, check console')
-        } finally {
-          setLoading(false)
-        }
-      }
-      loadAll()
-    }, [])
+    if (typeof window === 'undefined') return
+    const Quill = require('react-quill').Quill
+    // register size whitelist
+    const SizeStyle = Quill.import('attributors/style/size')
+    SizeStyle.whitelist = sizeOptions
+    Quill.register(SizeStyle, true)
+    // register color / background
+    const ColorStyle = Quill.import('attributors/style/color')
+    Quill.register(ColorStyle, true)
+    const BgStyle = Quill.import('attributors/style/background')
+    Quill.register(BgStyle, true)
   }, [])
+
+  // ── 2) Load settings & backgrounds (run once on mount)
+  useEffect(() => {
+    async function loadAll() {
+      try {
+        // fetch settings
+        const stRes = await fetch('/api/admin/settings')
+        const { settings: s } = await stRes.json()
+        setSettings(s)
+        setFormTitle(s.form_title || '')
+        setRules(s.rules || '')
+
+        // fetch background list
+        const bgRes = await fetch('/api/admin/backgrounds')
+        const { backgrounds: bgs } = await bgRes.json()
+        setBackgrounds(bgs)
+        setActiveBg(s.background_image || '')
+      } catch (err) {
+        console.error('Admin load error:', err)
+        alert('Failed to load admin data – see console.')
+      } finally {
+        setLoading(false)
+      }
+    }
+    loadAll()
+  }, [])
+
 
   // ── Handlers
   const saveFormTitle = async () => {
