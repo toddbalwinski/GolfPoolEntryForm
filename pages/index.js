@@ -98,7 +98,6 @@ export default function Home() {
         className="relative h-screen bg-no-repeat bg-cover bg-center bg-fixed"
         style={{ backgroundImage: `url('${bgImage}')` }}
       >
-        <div className="absolute inset-0 bg-cream/80" />
         <div className="relative h-full flex items-center justify-center">
           <div className="bg-white bg-opacity-90 rounded-lg p-8">
             <p className="text-dark-green">Loading…</p>
@@ -113,7 +112,6 @@ export default function Home() {
       className="relative h-screen bg-no-repeat bg-cover bg-center bg-fixed"
       style={{ backgroundImage: `url('${bgImage}')` }}
     >
-      <div className="absolute inset-0 bg-cream/80" />
       <div className="relative h-full overflow-y-auto">
         <div className="max-w-screen-lg mx-auto p-6">
           <div className="bg-white rounded-2xl shadow-lg p-8 space-y-6">
