@@ -7,31 +7,35 @@ import Papa from 'papaparse';
 const ReactQuill = dynamic(() => import('react-quill'), { ssr: false });
 
 export default function Admin() {
-  const [rules, setRules]             = useState('');
-  const [golfers, setGolfers]         = useState([]);
-  const [newGf, setNewGf]             = useState({ name: '', salary: '' });
-  const [backgrounds, setBackgrounds] = useState([]);
-  const [activeBg, setActiveBg]       = useState('');
-  const [bgFile, setBgFile]           = useState(null);
+  const [formTitle, setFormTitle]       = useState('');
+  const [rules, setRules]               = useState('');
+  const [rulesFontSize, setRulesFontSize] = useState('');
+  const [golfers, setGolfers]           = useState([]);
+  const [newGf, setNewGf]               = useState({ name: '', salary: '' });
+  const [backgrounds, setBackgrounds]   = useState([]);
+  const [activeBg, setActiveBg]         = useState('');
+  const [bgFile, setBgFile]             = useState(null);
 
-  const [loading, setLoading]         = useState(true);
+  const [loading, setLoading]           = useState(true);
   const [csvUploading, setCsvUploading] = useState(false);
   const [uploadingBg, setUploadingBg]   = useState(false);
 
   useEffect(() => {
     async function loadAll() {
-      // 1) Settings: rules + active background
+      // SETTINGS: title, rules, font size, background
       const stRes = await fetch('/api/admin/settings');
       const { settings } = await stRes.json();
+      setFormTitle(settings.form_title || 'Golf Pool Entry Form');
       setRules(settings.rules || '');
+      setRulesFontSize(settings.rules_font_size || '16');
       setActiveBg(settings.background_image || '');
 
-      // 2) Golfers
+      // GOLFERS
       const gfRes = await fetch('/api/admin/golfers');
       const { golfers: gfData } = await gfRes.json();
       setGolfers(gfData || []);
 
-      // 3) Background list
+      // BACKGROUNDS
       const bgRes = await fetch('/api/admin/backgrounds');
       const { backgrounds: bgList } = await bgRes.json();
       setBackgrounds(bgList || []);
@@ -41,163 +45,180 @@ export default function Admin() {
     loadAll();
   }, []);
 
+  // Save form title
+  const saveFormTitle = async () => {
+    await fetch('/api/admin/settings', {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ key:'form_title', value:formTitle })
+    });
+    alert('Form title saved');
+  };
+
   // Save rules HTML
   const saveRules = async () => {
-    await fetch('/api/admin/settings', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ key: 'rules', value: rules }),
+    await fetch('/api/admin/settings',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ key:'rules', value:rules })
     });
     alert('Rules saved');
   };
 
-  // Single‐golfer add/delete
+  // Save rules font size
+  const saveRulesFontSize = async () => {
+    await fetch('/api/admin/settings',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ key:'rules_font_size', value:rulesFontSize })
+    });
+    alert('Font size saved');
+  };
+
+  // Add / delete golfers (unchanged)
   const addGolfer = async () => {
-    const salaryInt = parseInt(newGf.salary, 10);
-    if (!newGf.name || isNaN(salaryInt)) {
-      return alert('Enter a name and numeric salary');
-    }
-    await fetch('/api/admin/golfers', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name: newGf.name, salary: salaryInt }),
+    const salaryInt = parseInt(newGf.salary,10);
+    if(!newGf.name||isNaN(salaryInt)){return alert('Name+salary needed')}
+    await fetch('/api/admin/golfers',{method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({name:newGf.name,salary:salaryInt})
     });
-    const { golfers: updated } = await (await fetch('/api/admin/golfers')).json();
-    setGolfers(updated || []);
-    setNewGf({ name: '', salary: '' });
+    const { golfers:updated } = await (await fetch('/api/admin/golfers')).json();
+    setGolfers(updated||[]);
+    setNewGf({name:'',salary:''});
+  };
+  const deleteGolfer = async id => {
+    if(!confirm(`Delete golfer #${id}?`))return;
+    await fetch(`/api/admin/golfers?id=${id}`,{method:'DELETE'});
+    setGolfers(golfers.filter(g=>g.id!==id));
   };
 
-  const deleteGolfer = async (id) => {
-    if (!confirm(`Delete golfer #${id}?`)) return;
-    await fetch(`/api/admin/golfers?id=${id}`, { method: 'DELETE' });
-    setGolfers(golfers.filter((g) => g.id !== id));
+  // CSV batch
+  const handleFile = e => {
+    const file = e.target.files?.[0]; if(!file)return;
+    Papa.parse(file,{header:false,skipEmptyLines:true,complete:async results=>{
+      if(!results||!Array.isArray(results.data))return alert('CSV parse failed');
+      const batch = results.data.map(r=>({
+        name:r[0]?.trim(),
+        salary:parseInt(r[1],10)
+      })).filter(g=>g.name&&!isNaN(g.salary));
+      if(batch.length===0)return alert('No valid rows');
+      setCsvUploading(true);
+      const res = await fetch('/api/admin/golfers/batch',{
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({golfers:batch})
+      });
+      setCsvUploading(false);
+      if(!res.ok){const {error}=await res.json();return alert('Upload failed:'+error)}
+      const { golfers:newList }=await res.json();
+      setGolfers(newList||[]);
+      alert(`Imported ${batch.length}`);
+    }});
   };
 
-  // Batch CSV upload
-  const handleFile = (e) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    Papa.parse(file, {
-      header: false,
-      skipEmptyLines: true,
-      complete: async (results) => {
-        if (!results || !Array.isArray(results.data)) {
-          return alert('CSV parse failed');
-        }
-        const batch = results.data
-          .map((row) => ({
-            name: row[0]?.trim(),
-            salary: parseInt(row[1], 10),
-          }))
-          .filter((g) => g.name && !isNaN(g.salary));
-        if (batch.length === 0) {
-          return alert('No valid rows');
-        }
-        setCsvUploading(true);
-        const res = await fetch('/api/admin/golfers/batch', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ golfers: batch }),
-        });
-        setCsvUploading(false);
-        if (!res.ok) {
-          const { error } = await res.json();
-          return alert('Upload failed: ' + error);
-        }
-        const { golfers: newList } = await res.json();
-        setGolfers(newList || []);
-        alert(`Imported ${batch.length}`);
-      },
-    });
-  };
-
-  // Clear all entries
+  // Clear everything
   const clearEntries = async () => {
-    if (!confirm('Clear all entries?')) return;
-    const res = await fetch('/api/admin/entries/reset', { method: 'POST' });
-    if (!res.ok) {
-      const { error } = await res.json();
-      return alert('Entries clear failed: ' + error);
-    }
+    if(!confirm('Clear all entries?'))return;
+    const res = await fetch('/api/admin/entries/reset',{method:'POST'});
+    if(!res.ok){const{error}=await res.json();return alert('Failed:'+error)}
     alert('Entries cleared');
   };
-
-  // Clear all golfers
   const clearGolfers = async () => {
-    if (!confirm('Delete ALL golfers?')) return;
-    const res = await fetch('/api/admin/golfers/reset', { method: 'POST' });
-    if (!res.ok) {
-      const { error } = await res.json();
-      return alert('Failed to clear golfers: ' + error);
-    }
-    setGolfers([]);
-    alert('Golfers cleared');
+    if(!confirm('Delete ALL golfers?'))return;
+    const res=await fetch('/api/admin/golfers/reset',{method:'POST'});
+    if(!res.ok){const{error}=await res.json();return alert('Failed:'+error)}
+    setGolfers([]);alert('Golfers cleared');
   };
 
-  // Upload a new background image
+  // Background upload & select
   const uploadBg = async () => {
-    if (!bgFile) return alert('Select an image first');
+    if(!bgFile)return alert('Select image');
     setUploadingBg(true);
-    const form = new FormData();
-    form.append('image', bgFile);
-    const res = await fetch('/api/admin/backgrounds/upload', {
-      method: 'POST',
-      body: form,
-    });
+    const form = new FormData(); form.append('image',bgFile);
+    const res = await fetch('/api/admin/backgrounds/upload',{method:'POST',body:form});
     setUploadingBg(false);
-    if (!res.ok) {
-      const { error } = await res.json();
-      return alert('Upload failed: ' + error);
-    }
-    const { key, publicUrl } = await res.json();
-    setBackgrounds([{ key, publicUrl }, ...backgrounds]);
+    if(!res.ok){const{error}=await res.json();return alert('Upload failed:'+error)}
+    const {key,publicUrl}=await res.json();
+    setBackgrounds([{key,publicUrl},...backgrounds]);
     setBgFile(null);
   };
-
-  // Save the selected background to settings
   const saveBgSelection = async () => {
-    await fetch('/api/admin/settings', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ key: 'background_image', value: activeBg }),
+    await fetch('/api/admin/settings',{method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ key:'background_image', value:activeBg })
     });
     alert('Background updated');
   };
 
-  if (loading) {
-    return <p className="p-6 text-center">Loading admin…</p>;
+  if(loading){
+    return <p className="p-6 text-center">Loading…</p>;
   }
 
   return (
-    <div className="p-8 max-w-4xl mx-auto space-y-8 font-sans text-dark-green">
+    <div className="p-8 max-w-4xl mx-auto space-y-8 text-dark-green font-sans">
       <h1 className="text-2xl font-bold">🏌️‍♂️ Golf Pool Admin</h1>
 
-      {/* Rules */}
+      {/* Form Title */}
+      <section className="space-y-2">
+        <h2 className="font-semibold">Form Title</h2>
+        <input
+          type="text"
+          value={formTitle}
+          onChange={e=>setFormTitle(e.target.value)}
+          className="w-full border border-dark-green/50 p-2 rounded"
+        />
+        <button
+          onClick={saveFormTitle}
+          className="bg-dark-green text-white px-4 py-2 rounded"
+        >
+          Save Title
+        </button>
+      </section>
+
+      {/* Rules Editor */}
       <section className="space-y-2">
         <h2 className="font-semibold">Rules Text</h2>
-        <div className="border border-dark-green/50 rounded-lg overflow-hidden">
+        <div className="border border-dark-green/50 rounded overflow-hidden">
           <ReactQuill
             theme="snow"
             value={rules}
             onChange={setRules}
             modules={{
-              toolbar: [
-                ['bold', 'italic', 'underline', 'strike'],
-                [{ list: 'ordered' }, { list: 'bullet' }],
-                ['link', 'clean'],
-              ],
+              toolbar:[
+                ['bold','italic','underline','strike'],
+                [{list:'ordered'},{list:'bullet'}],
+                ['link','clean']
+              ]
             }}
           />
         </div>
         <button
           onClick={saveRules}
-          className="bg-dark-green text-white px-4 py-2 rounded-lg"
+          className="bg-dark-green text-white px-4 py-2 rounded"
         >
           Save Rules
         </button>
       </section>
 
-      {/* Batch CSV */}
+      {/* Rules Font Size */}
+      <section className="space-y-2">
+        <h2 className="font-semibold">Rules Font Size (px)</h2>
+        <input
+          type="number"
+          value={rulesFontSize}
+          onChange={e=>setRulesFontSize(e.target.value.replace(/\D/g,''))}
+          className="w-24 border border-dark-green/50 p-2 rounded"
+        />
+        <button
+          onClick={saveRulesFontSize}
+          className="bg-dark-green text-white px-4 py-2 rounded"
+        >
+          Save Font Size
+        </button>
+      </section>
+
+      {/* Batch CSV Upload */}
       <section className="space-y-2">
         <h2 className="font-semibold">Batch Upload Golfers (CSV)</h2>
         <input
@@ -224,18 +245,16 @@ export default function Admin() {
               </tr>
             </thead>
             <tbody>
-              {golfers.map((g) => (
+              {golfers.map(g=>(
                 <tr key={g.id}>
                   <td className="border px-3 py-1">{g.id}</td>
                   <td className="border px-3 py-1">{g.name}</td>
-                  <td className="border px-3 py-1">{g.salary}</td>
+                  <td className="border px-3 py-1">${g.salary}</td>
                   <td className="border px-3 py-1">
                     <button
-                      onClick={() => deleteGolfer(g.id)}
+                      onClick={()=>deleteGolfer(g.id)}
                       className="text-red-600 hover:underline"
-                    >
-                      Delete
-                    </button>
+                    >Delete</button>
                   </td>
                 </tr>
               ))}
@@ -244,23 +263,20 @@ export default function Admin() {
         ) : (
           <p>No golfers yet</p>
         )}
-
-        {/* Add Golfer */}
         <div className="grid grid-cols-2 gap-4 mt-4">
           <input
             placeholder="Name"
             value={newGf.name}
-            onChange={(e) => setNewGf({ ...newGf, name: e.target.value })}
+            onChange={e=>setNewGf({...newGf,name:e.target.value})}
             className="border p-2 rounded"
           />
           <input
+            type="text"
             placeholder="Salary"
             value={newGf.salary}
             inputMode="numeric"
             pattern="\d*"
-            onChange={(e) =>
-              setNewGf({ ...newGf, salary: e.target.value.replace(/\D/g, '') })
-            }
+            onChange={e=>setNewGf({...newFf,salary:e.target.value.replace(/\D/g,'')})}
             className="border p-2 rounded"
           />
         </div>
@@ -272,7 +288,7 @@ export default function Admin() {
         </button>
       </section>
 
-      {/* Clear buttons */}
+      {/* Clear Buttons */}
       <section className="flex space-x-4">
         <button
           onClick={clearEntries}
@@ -291,13 +307,11 @@ export default function Admin() {
       {/* Background Manager */}
       <section className="space-y-4">
         <h2 className="font-semibold">Background Images</h2>
-
-        {/* Upload */}
         <div className="flex items-center space-x-2">
           <input
             type="file"
             accept="image/*"
-            onChange={(e) => setBgFile(e.target.files?.[0])}
+            onChange={e=>setBgFile(e.target.files?.[0])}
             className="border p-1 rounded"
           />
           <button
@@ -305,17 +319,12 @@ export default function Admin() {
             disabled={uploadingBg}
             className="bg-dark-green text-white px-4 py-1 rounded disabled:opacity-50"
           >
-            {uploadingBg ? 'Uploading…' : 'Upload'}
+            {uploadingBg?'Uploading…':'Upload'}
           </button>
         </div>
-
-        {/* Gallery */}
         <div className="grid grid-cols-3 gap-4">
-          {backgrounds.map((bg) => (
-            <label
-              key={bg.key}
-              className="border p-2 rounded cursor-pointer"
-            >
+          {backgrounds.map(bg=>(
+            <label key={bg.key} className="border p-2 rounded cursor-pointer">
               <img
                 src={bg.publicUrl}
                 alt=""
@@ -326,15 +335,14 @@ export default function Admin() {
                   type="radio"
                   name="activeBg"
                   value={bg.publicUrl}
-                  checked={activeBg === bg.publicUrl}
-                  onChange={() => setActiveBg(bg.publicUrl)}
+                  checked={activeBg===bg.publicUrl}
+                  onChange={()=>setActiveBg(bg.publicUrl)}
                 />
                 <span className="ml-2 truncate">{bg.key}</span>
               </div>
             </label>
           ))}
         </div>
-
         <button
           onClick={saveBgSelection}
           className="bg-dark-green text-white px-4 py-2 rounded"

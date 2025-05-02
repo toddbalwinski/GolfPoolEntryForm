@@ -4,37 +4,55 @@ import GolferGrid from '../components/GolferGrid';
 import { supabase } from '../lib/supabase';
 
 export default function Home() {
-  const [bgImage, setBgImage] = useState('/images/quail-hollow.jpg');
-  const [rules, setRules]     = useState('');
-  const [golfers, setGolfers] = useState([]);
-  const [picks, setPicks]     = useState([]);
-  const [error, setError]     = useState(null);
-  const [loading, setLoading] = useState(true);
+  const [bgImage, setBgImage]       = useState('/images/quail-hollow.jpg');
+  const [formTitle, setFormTitle]   = useState('Golf Pool Entry Form');
+  const [rules, setRules]           = useState('');
+  const [rulesFontSize, setRulesFontSize] = useState('16');
+  const [golfers, setGolfers]       = useState([]);
+  const [picks, setPicks]           = useState([]);
+  const [error, setError]           = useState(null);
+  const [loading, setLoading]       = useState(true);
 
   useEffect(() => {
     async function loadData() {
-      // active background
+      // background
       const { data: bgSetting } = await supabase
         .from('settings')
         .select('value')
-        .eq('key', 'background_image')
+        .eq('key','background_image')
         .single();
-      if (bgSetting?.value) setBgImage(bgSetting.value);
+      if(bgSetting?.value) setBgImage(bgSetting.value);
 
-      // rules HTML
+      // form title
+      const { data: ftSetting } = await supabase
+        .from('settings')
+        .select('value')
+        .eq('key','form_title')
+        .single();
+      if(ftSetting?.value) setFormTitle(ftSetting.value);
+
+      // rules
       const { data: rSetting } = await supabase
         .from('settings')
         .select('value')
-        .eq('key', 'rules')
+        .eq('key','rules')
         .single();
-      setRules(rSetting?.value || '');
+      setRules(rSetting?.value||'');
 
-      // golfers list
+      // rules font size
+      const { data: fsSetting } = await supabase
+        .from('settings')
+        .select('value')
+        .eq('key','rules_font_size')
+        .single();
+      if(fsSetting?.value) setRulesFontSize(fsSetting.value);
+
+      // golfers
       const { data: gf } = await supabase
         .from('golfers')
         .select('*')
-        .order('id', { ascending: true });
-      setGolfers(gf || []);
+        .order('id',{ascending:true});
+      setGolfers(gf||[]);
 
       setLoading(false);
     }
@@ -42,54 +60,45 @@ export default function Home() {
   }, []);
 
   const totalSalary = useMemo(
-    () =>
-      picks.reduce((sum, id) => {
-        const g = golfers.find((g) => g.id === id);
-        return sum + (g?.salary || 0);
-      }, 0),
-    [picks, golfers]
+    () => picks.reduce((sum,id)=>{
+      const g=golfers.find(g=>g.id===id);
+      return sum+(g?.salary||0);
+    },0),
+    [picks,golfers]
   );
 
-  const handleToggle = (id) => (e) => {
+  const handleToggle = id => e => {
     setError(null);
-    setPicks((prev) =>
+    setPicks(prev=>
       e.target.checked
-        ? (prev.length < 6 ? [...prev, id] : prev)
-        : prev.filter((p) => p !== id)
+        ? (prev.length<6? [...prev,id]:prev)
+        : prev.filter(p=>p!==id)
     );
   };
 
-  const handleSubmit = async (e) => {
+  const handleSubmit = async e => {
     e.preventDefault();
-    if (picks.length !== 6) {
-      return setError('Please pick exactly 6 golfers.');
-    }
-    if (totalSalary > 100) {
-      return setError(`Salary cap exceeded: $${totalSalary}`);
-    }
+    if(picks.length!==6) return setError('Pick exactly 6 golfers.');
+    if(totalSalary>100) return setError(`Salary cap exceeded: $${totalSalary}`);
 
-    const { first, last, email, entryName } = Object.fromEntries(
-      new FormData(e.target)
-    );
-    const res = await fetch('/api/submit', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ first, last, email, entryName, picks }),
+    const { first,last,email,entryName } = Object.fromEntries(new FormData(e.target));
+    const res=await fetch('/api/submit',{method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({first,last,email,entryName,picks})
     });
-    if (!res.ok) {
-      const { error } = await res.json();
+    if(!res.ok){
+      const{error}=await res.json();
       return setError(error);
     }
-    alert('Entry submitted! Thank you.');
-    setPicks([]);
-    e.target.reset();
+    alert('Entry submitted!');
+    setPicks([]); e.target.reset();
   };
 
-  if (loading) {
+  if(loading){
     return (
       <div
         className="relative h-screen bg-no-repeat bg-cover bg-center bg-fixed"
-        style={{ backgroundImage: `url('${bgImage}')` }}
+        style={{backgroundImage:`url('${bgImage}')`}}
       >
         <div className="absolute inset-0 bg-cream/80" />
         <div className="relative h-full flex items-center justify-center">
@@ -104,18 +113,22 @@ export default function Home() {
   return (
     <div
       className="relative h-screen bg-no-repeat bg-cover bg-center bg-fixed"
-      style={{ backgroundImage: `url('${bgImage}')` }}
+      style={{backgroundImage:`url('${bgImage}')`}}
     >
-      {/* <div className="absolute inset-0 bg-cream/80" /> */}
+      <div className="absolute inset-0 bg-cream/80" />
       <div className="relative h-full overflow-y-auto">
         <div className="max-w-screen-lg mx-auto p-6">
           <div className="bg-white rounded-2xl shadow-lg p-8 space-y-6">
+            {/* Dynamic Title */}
             <h1 className="text-3xl font-bold text-dark-green text-center">
-              Golf Pool Entry Form
+              {formTitle}
             </h1>
 
-            {/* Rules */}
-            <section className="bg-cream p-4 rounded-lg">
+            {/* Rules with dynamic font size */}
+            <section
+              className="bg-cream p-4 rounded-lg"
+              style={{ fontSize: `${rulesFontSize}px` }}
+            >
               <div
                 className="
                   prose prose-sm
@@ -167,7 +180,7 @@ export default function Home() {
                 <strong>${totalSalary}</strong>/100
               </p>
 
-              {/* Golfers */}
+              {/* Golfer grid */}
               <GolferGrid golfers={golfers} picks={picks} onToggle={handleToggle} />
 
               <button
