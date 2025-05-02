@@ -54,7 +54,7 @@ export default function Admin() {
       // fetch backgrounds
       const bgRes = await fetch('/api/admin/backgrounds');
       const { backgrounds: bgList } = await bgRes.json();
-      setBackgrounds(bggList || []);
+      setBackgrounds(bgList || []);
 
       setLoading(false);
     }
