@@ -1,24 +1,34 @@
 // pages/api/admin/settings.js
-import { supabaseAdmin } from '../../../lib/supabase';
+import { createClient } from '@supabase/supabase-js'
+
+const supabase = createClient(
+  process.env.SUPABASE_URL,
+  process.env.SUPABASE_SERVICE_ROLE_KEY
+)
 
 export default async function handler(req, res) {
   if (req.method === 'GET') {
-    const { data, error } = await supabaseAdmin.from('settings').select('*');
-    if (error) return res.status(500).json({ error: error.message });
-    // return as key→value map
-    const settings = Object.fromEntries(data.map((r) => [r.key, r.value]));
-    return res.status(200).json({ settings });
+    const { data, error } = await supabase
+      .from('settings')
+      .select('key, value')
+    if (error) return res.status(500).json({ error: error.message })
+    // return as an object map
+    const map = data.reduce((acc, { key, value }) => {
+      acc[key] = value
+      return acc
+    }, {})
+    return res.status(200).json({ settings: map })
   }
 
   if (req.method === 'POST') {
-    const { key, value } = req.body;
-    if (!key) return res.status(400).json({ error: 'Missing key' });
-    const { error } = await supabaseAdmin
+    const { key, value } = req.body
+    const { error } = await supabase
       .from('settings')
-      .upsert([{ key, value }], { onConflict: 'key' });
-    if (error) return res.status(500).json({ error: error.message });
-    return res.status(200).json({ success: true });
+      .upsert({ key, value })
+    if (error) return res.status(500).json({ error: error.message })
+    return res.status(200).json({ updated: true })
   }
 
-  res.status(405).end();
+  res.setHeader('Allow', ['GET','POST'])
+  res.status(405).end(`Method ${req.method} Not Allowed`)
 }

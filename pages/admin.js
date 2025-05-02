@@ -1,8 +1,8 @@
 // pages/admin.js
 import { useState, useEffect } from 'react'
+import { supabase } from '../lib/supabase'
 import dynamic from 'next/dynamic'
 import 'react-quill/dist/quill.snow.css'
-import { supabase } from '../lib/supabase'
 
 
 const ReactQuill = dynamic(() => import('react-quill'), { ssr: false })

@@ -1,31 +1,31 @@
 // pages/api/admin/backgrounds/index.js
-import { supabaseAdmin } from '../../../../lib/supabase';
+import { createClient } from '@supabase/supabase-js'
+
+const supabase = createClient(
+  process.env.SUPABASE_URL,
+  process.env.SUPABASE_SERVICE_ROLE_KEY
+)
 
 export default async function handler(req, res) {
   if (req.method !== 'GET') {
-    res.setHeader('Allow', 'GET');
-    return res.status(405).end('Method Not Allowed');
+    return res.status(405).json({ error: 'GET only' })
   }
-
-  // list up to 100 files, sorted newest first
-  const { data, error } = await supabaseAdmin
+  // list files in the "backgrounds" bucket
+  const { data: files, error } = await supabase
     .storage
     .from('backgrounds')
-    .list('', { limit: 100, sortBy: { column: 'created_at', order: 'desc' } });
+    .list('', { sortBy: { column: 'name', order: 'desc' } })
 
-  if (error) {
-    console.error(error);
-    return res.status(500).json({ error: error.message });
-  }
+  if (error) return res.status(500).json({ error: error.message })
 
-  // build public URLs
-  const backgrounds = data.map((f) => {
-    const { publicUrl } = supabaseAdmin
+  // turn each into { key, publicUrl }
+  const publicUrls = files.map((f) => {
+    const { publicURL } = supabase
       .storage
       .from('backgrounds')
-      .getPublicUrl(f.name);
-    return { key: f.name, publicUrl };
-  });
+      .getPublicUrl(f.name)
+    return { key: f.name, publicUrl: publicURL }
+  })
 
-  res.status(200).json({ backgrounds });
+  res.status(200).json({ backgrounds: publicUrls })
 }
