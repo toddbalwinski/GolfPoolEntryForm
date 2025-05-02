@@ -10,7 +10,7 @@ export default function Entries() {
 
   useEffect(() => {
     async function load() {
-      // Fetch golfers into a lookup map
+      // 1) Build golfer lookup
       const { data: gfList } = await supabase
         .from('golfers')
         .select('id,name,salary')
@@ -18,7 +18,7 @@ export default function Entries() {
       gfList.forEach((g) => { map[g.id] = { name: g.name, salary: g.salary } })
       setGMap(map)
 
-      // Fetch entries
+      // 2) Fetch entries
       const { data: enList } = await supabase
         .from('entries')
         .select('first_name, last_name, email, entry_name, picks')
@@ -38,11 +38,9 @@ export default function Entries() {
   // CSV export
   const exportCsv = () => {
     const header = [
-      'First Name',
-      'Last Name',
-      'Email',
-      'Entry Name',
-      ...Array.from({ length: 6 }, (_, i) => [`Golfer ${i+1}`, `Salary ${i+1}`]).flat(),
+      'First Name','Last Name','Email','Entry Name',
+      ...Array.from({length:6},(_,i)=>`Golfer ${i+1}`),
+      ...Array.from({length:6},(_,i)=>`Salary ${i+1}`),
       'Total Salary'
     ]
 
@@ -50,10 +48,9 @@ export default function Entries() {
       ({ first_name, last_name, email, entry_name, picks }) => {
         const out = [ first_name, last_name, email, entry_name ]
         let total = 0
-        // interleave name+salary
+
         for (let i = 0; i < 6; i++) {
-          const id = picks[i]
-          const g = gMap[id] || { name:'', salary:0 }
+          const g = gMap[picks[i]] || { name:'', salary:0 }
           out.push(g.name, g.salary)
           total += g.salary
         }
@@ -63,10 +60,10 @@ export default function Entries() {
     )
 
     const csv = [header, ...rows]
-      .map((r) => r.map((c) => `"${String(c).replace(/"/g,'""')}"`).join(','))
+      .map(r => r.map(c => `"${String(c).replace(/"/g,'""')}"`).join(','))
       .join('\r\n')
 
-    const blob = new Blob([csv], { type: 'text/csv' })
+    const blob = new Blob([csv], { type:'text/csv' })
     const url  = URL.createObjectURL(blob)
     const a    = document.createElement('a')
     a.href     = url
@@ -118,46 +115,46 @@ export default function Entries() {
         <table className="w-full table-auto border-collapse">
           <thead>
             <tr className="bg-white">
-              <th className="border px-2 py-1">First Name</th>
-              <th className="border px-2 py-1">Last Name</th>
-              <th className="border px-2 py-1">Email</th>
-              <th className="border px-2 py-1">Entry Name</th>
+              <th className="border px-4 py-2">First Name</th>
+              <th className="border px-4 py-2">Last Name</th>
+              <th className="border px-4 py-2">Email</th>
+              <th className="border px-4 py-2">Entry Name</th>
 
-              {/* interleaved Golfer/Salary columns */}
+              {/* interleaved Golfer/Salary */}
               {Array.from({ length: 6 }).map((_, i) => (
                 <React.Fragment key={i}>
-                  <th className="border px-2 py-1">Golfer {i+1}</th>
-                  <th className="border px-2 py-1">Salary {i+1}</th>
+                  <th className="border px-4 py-2">Golfer {i + 1}</th>
+                  <th className="border px-4 py-2">Salary {i + 1}</th>
                 </React.Fragment>
               ))}
 
-              <th className="border px-2 py-1">Total</th>
+              <th className="border px-4 py-2">Total</th>
             </tr>
           </thead>
+
           <tbody>
             {entries.map((e, idx) => {
               const { first_name, last_name, email, entry_name, picks } = e
               let total = 0
               return (
                 <tr key={idx} className="odd:bg-white even:bg-gray-50">
-                  <td className="border px-2 py-1">{first_name}</td>
-                  <td className="border px-2 py-1">{last_name}</td>
-                  <td className="border px-2 py-1">{email}</td>
-                  <td className="border px-2 py-1">{entry_name}</td>
+                  <td className="border px-4 py-2">{first_name}</td>
+                  <td className="border px-4 py-2">{last_name}</td>
+                  <td className="border px-4 py-2">{email}</td>
+                  <td className="border px-4 py-2">{entry_name}</td>
 
-                  {/* interleave each pick's name and salary */}
                   {Array.from({ length: 6 }).map((_, i) => {
                     const g = gMap[picks[i]] || { name:'', salary:0 }
                     total += g.salary
                     return (
                       <React.Fragment key={i}>
-                        <td className="border px-2 py-1">{g.name}</td>
-                        <td className="border px-2 py-1">${g.salary}</td>
+                        <td className="border px-4 py-2">{g.name}</td>
+                        <td className="border px-4 py-2">${g.salary}</td>
                       </React.Fragment>
                     )
                   })}
 
-                  <td className="border px-2 py-1">${total}</td>
+                  <td className="border px-4 py-2">${total}</td>
                 </tr>
               )
             })}
