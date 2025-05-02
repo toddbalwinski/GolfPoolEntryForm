@@ -138,7 +138,7 @@ export default function Admin() {
         .ql-snow .ql-picker.ql-size .ql-picker-item[data-value="48px"]::before { content: "48px"; }
       `}</style>
 
-      <div className="p-8 max-w-4xl mx-auto space-y-8 font-sans text-dark-green">
+      <div className="p-8 max-w-4xl mx-auto space-y-8 font-sans text-dark-green bg-gray-50">
         <h1 className="text-2xl font-bold">🏌️‍♂️ Golf Pool Admin</h1>
 
         {/* Form Title */}

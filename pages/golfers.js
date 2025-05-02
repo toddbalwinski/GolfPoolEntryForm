@@ -88,8 +88,8 @@ export default function GolfersManager() {
   }
 
   return (
-    <div className="p-8 max-w-2xl mx-auto space-y-6 font-sans text-dark-green">
-      <h1 className="text-2xl font-bold">⛳️ Manage Golfers</h1>
+    <div className="p-8 max-w-2xl mx-auto space-y-6 font-sans text-dark-green bg-gray-50">
+      <h1 className="text-2xl font-bold">Manage Golfers</h1>
 
       {/* CSV Batch Upload */}
       <section className="space-y-2">

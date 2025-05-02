@@ -91,9 +91,9 @@ export default function Entries() {
   }
 
   return (
-    <div className="p-6 max-w-screen-xl mx-auto bg-cream rounded-lg space-y-4">
+    <div className="p-6 max-w-screen-xl mx-auto bg-gray-50 rounded-lg space-y-4">
       <div className="flex justify-between items-center">
-        <h1 className="text-2xl font-bold text-dark-green">All Entries</h1>
+        <h1 className="text-2xl font-bold text-dark-green">Form Entries</h1>
         <div className="space-x-2">
           <button
             onClick={exportCsv}
