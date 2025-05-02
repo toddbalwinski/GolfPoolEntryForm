@@ -89,24 +89,44 @@ export default function Admin() {
     alert('Rules saved')
   }
 
-  const uploadBg = async () => {
+  async function uploadBg() {
     if (!bgFile) return alert('Select an image')
     setUploadingBg(true)
-    const fd = new FormData()
-    fd.append('image', bgFile)
+  
+    // 1) upload to Storage
+    const formData = new FormData()
+    formData.append('image', bgFile)
     const res = await fetch('/api/admin/backgrounds/upload', {
       method: 'POST',
-      body: fd
+      body: formData
     })
     setUploadingBg(false)
+  
     if (!res.ok) {
       const { error } = await res.json()
       return alert('Upload failed: ' + error)
     }
+  
     const { key, publicUrl } = await res.json()
+  
+    // 2) update your local list so the new one shows up immediately
     setBackgrounds([{ key, publicUrl }, ...backgrounds])
     setBgFile(null)
+  
+    // 3) **immediately save** it as the active background
+    const saveRes = await fetch('/api/admin/settings', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ key: 'background_image', value: publicUrl })
+    })
+    if (!saveRes.ok) {
+      const { error } = await saveRes.json()
+      return alert('Failed to save setting: ' + error)
+    }
+  
+    alert('Background uploaded & saved successfully!')
   }
+  
 
   const saveBgSelection = async () => {
     await fetch('/api/admin/settings', {
