@@ -3,7 +3,7 @@ export default function GolferGrid({ golfers, picks, onToggle }) {
   return (
     <fieldset className="grid grid-cols-4 gap-4 justify-items-center border border-dark-green/50 rounded-lg p-4">
       <legend className="col-span-4 text-sm font-semibold text-dark-green mb-2">
-        Select exactly 6 golfers (≤ $100 cap)
+        Select Golfers
       </legend>
       {golfers.map((g) => {
         const checked = picks.includes(g.id);

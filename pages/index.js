@@ -111,11 +111,11 @@ export default function Home() {
         <div className="max-w-screen-lg mx-auto p-6">
           <div className="bg-white rounded-2xl shadow-lg p-8 space-y-6">
             <h1 className="text-3xl font-bold text-dark-green text-center">
-              Golf Pool Entry
+              Golf Pool Entry Form
             </h1>
 
             {/* Rules */}
-            <section className="bg-cream border-l-4 border-dark-green p-4 rounded-lg">
+            <section className="bg-cream p-4 rounded-lg">
               <div
                 className="
                   prose prose-sm
