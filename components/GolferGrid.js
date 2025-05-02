@@ -3,11 +3,10 @@ import React from 'react'
 
 export default function GolferGrid({ golfers, picks, onToggle }) {
   return (
-    <div className="border border-dark-green rounded-lg p-4 space-y-4">
-      {/* Moved label inside the bordered box */}
-      <p className="text-lg font-semibold text-dark-green">
-        Select Golfers
-      </p>
+    <fieldset className="relative border border-dark-green rounded-lg pt-6 px-4 pb-4">
+      <legend className="absolute -top-3 left-4 bg-white px-2 text-lg font-semibold text-dark-green">
+        Select exactly 6 golfers (≤ $100 cap)
+      </legend>
 
       <div className="grid grid-cols-4 gap-4">
         {golfers.map((g) => (
@@ -21,12 +20,10 @@ export default function GolferGrid({ golfers, picks, onToggle }) {
               onChange={onToggle(g.id)}
               className="mr-3 w-5 h-5 text-dark-green"
             />
-            <span className="text-dark-green">
-              ${g.salary} – {g.name}
-            </span>
+            <span className="text-dark-green">${g.salary} – {g.name}</span>
           </label>
         ))}
       </div>
-    </div>
+    </fieldset>
   )
 }
