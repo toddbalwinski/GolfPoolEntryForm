@@ -25,7 +25,6 @@ export default function Admin() {
   // ── Quill toolbar + formats
   const modules = {
     toolbar: [
-      [{ header: [1, 2, 3, false] }],
       [{ size: sizeOptions }],
       ['bold', 'italic', 'underline', 'strike'],
       [{ color: [] }, { background: [] }],
