@@ -33,7 +33,7 @@ export default function Home() {
       const { data: gf } = await supabase
         .from('golfers')
         .select('*')
-        .order('name', { ascending: true });
+        .order('id', { ascending: true });
       setGolfers(gf || []);
 
       setLoading(false);
