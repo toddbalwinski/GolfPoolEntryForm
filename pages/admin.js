@@ -7,7 +7,7 @@ import Papa from 'papaparse'
 const ReactQuill = dynamic(() => import('react-quill'), { ssr: false })
 
 export default function Admin() {
-  // --- State ---
+  // ── State
   const [formTitle, setFormTitle] = useState('')
   const [rules, setRules] = useState('')
 
@@ -22,12 +22,12 @@ export default function Admin() {
 
   const [loading, setLoading] = useState(true)
 
-  // --- Quill size whitelist ---
+  // ── Pixel sizes for the size dropdown
   const sizeOptions = [
     '8px','10px','12px','14px','16px','18px','20px','22px','24px','28px','32px','36px','48px'
   ]
 
-  // --- Quill toolbar & formats ---
+  // ── Quill toolbar + formats
   const modules = {
     toolbar: [
       [{ header: [1, 2, 3, false] }],
@@ -47,16 +47,18 @@ export default function Admin() {
     'link', 'image'
   ]
 
+  // ── On mount: register size/color and load data
   useEffect(() => {
-    // register pixel-size whitelist
     if (typeof window !== 'undefined') {
       const Quill = require('react-quill').Quill
       const SizeStyle = Quill.import('attributors/style/size')
       SizeStyle.whitelist = sizeOptions
       Quill.register(SizeStyle, true)
+      const ColorStyle = Quill.import('attributors/style/color')
+      Quill.register(ColorStyle, true)
+      const BgStyle = Quill.import('attributors/style/background')
+      Quill.register(BgStyle, true)
     }
-
-    // load settings, golfers, backgrounds
     async function loadAll() {
       // settings
       const stRes = await fetch('/api/admin/settings')
@@ -80,7 +82,7 @@ export default function Admin() {
     loadAll()
   }, [])
 
-  // --- Handlers ---
+  // ── Handlers
   const saveFormTitle = async () => {
     await fetch('/api/admin/settings', {
       method: 'POST',
@@ -89,7 +91,6 @@ export default function Admin() {
     })
     alert('Form title saved')
   }
-
   const saveRules = async () => {
     await fetch('/api/admin/settings', {
       method: 'POST',
@@ -102,7 +103,7 @@ export default function Admin() {
   const addGolfer = async () => {
     const salaryInt = parseInt(newGf.salary, 10)
     if (!newGf.name || isNaN(salaryInt)) {
-      return alert('Enter both name and numeric salary')
+      return alert('Enter name and numeric salary')
     }
     await fetch('/api/admin/golfers', {
       method: 'POST',
@@ -155,7 +156,7 @@ export default function Admin() {
     const res = await fetch('/api/admin/entries/reset', { method: 'POST' })
     if (!res.ok) {
       const { error } = await res.json()
-      return alert('Failed to clear entries: ' + error)
+      return alert('Error clearing entries: ' + error)
     }
     alert('Entries cleared')
   }
@@ -165,7 +166,7 @@ export default function Admin() {
     const res = await fetch('/api/admin/golfers/reset', { method: 'POST' })
     if (!res.ok) {
       const { error } = await res.json()
-      return alert('Failed to clear golfers: ' + error)
+      return alert('Error clearing golfers: ' + error)
     }
     setGolfers([])
     alert('Golfers cleared')
@@ -176,11 +177,12 @@ export default function Admin() {
     setUploadingBg(true)
     const fd = new FormData()
     fd.append('image', bgFile)
-    const res = await fetch('/api/admin/backgrounds/upload', {
-      method: 'POST',
-      body: fd
-    })
+    const res = await fetch('/api/admin/backgrounds/upload', { method: 'POST', body: fd })
     setUploadingBg(false)
+    if (!res.ok) {
+      const { error } = await res.json()
+      return alert('Upload failed: ' + error)
+    }
     const { key, publicUrl } = await res.json()
     setBackgrounds([{ key, publicUrl }, ...backgrounds])
     setBgFile(null)
@@ -200,179 +202,198 @@ export default function Admin() {
   }
 
   return (
-    <div className="p-8 max-w-4xl mx-auto space-y-8 font-sans text-dark-green">
-      <h1 className="text-2xl font-bold">🏌️‍♂️ Golf Pool Admin</h1>
+    <>
+      {/* Map pixel-values to dropdown labels */}
+      <style jsx global>{`
+        .ql-snow .ql-picker.ql-size .ql-picker-item[data-value="8px"]::before { content: "8px"; }
+        .ql-snow .ql-picker.ql-size .ql-picker-item[data-value="10px"]::before { content: "10px"; }
+        .ql-snow .ql-picker.ql-size .ql-picker-item[data-value="12px"]::before { content: "12px"; }
+        .ql-snow .ql-picker.ql-size .ql-picker-item[data-value="14px"]::before { content: "14px"; }
+        .ql-snow .ql-picker.ql-size .ql-picker-item[data-value="16px"]::before { content: "16px"; }
+        .ql-snow .ql-picker.ql-size .ql-picker-item[data-value="18px"]::before { content: "18px"; }
+        .ql-snow .ql-picker.ql-size .ql-picker-item[data-value="20px"]::before { content: "20px"; }
+        .ql-snow .ql-picker.ql-size .ql-picker-item[data-value="22px"]::before { content: "22px"; }
+        .ql-snow .ql-picker.ql-size .ql-picker-item[data-value="24px"]::before { content: "24px"; }
+        .ql-snow .ql-picker.ql-size .ql-picker-item[data-value="28px"]::before { content: "28px"; }
+        .ql-snow .ql-picker.ql-size .ql-picker-item[data-value="32px"]::before { content: "32px"; }
+        .ql-snow .ql-picker.ql-size .ql-picker-item[data-value="36px"]::before { content: "36px"; }
+        .ql-snow .ql-picker.ql-size .ql-picker-item[data-value="48px"]::before { content: "48px"; }
+      `}</style>
 
-      {/* Form Title */}
-      <section className="space-y-2">
-        <h2 className="font-semibold">Form Title</h2>
-        <input
-          type="text"
-          value={formTitle}
-          onChange={(e) => setFormTitle(e.target.value)}
-          className="w-full border border-dark-green/50 p-2 rounded"
-        />
-        <button
-          onClick={saveFormTitle}
-          className="bg-dark-green text-white px-4 py-2 rounded"
-        >
-          Save Title
-        </button>
-      </section>
+      <div className="p-8 max-w-4xl mx-auto space-y-8 font-sans text-dark-green">
+        <h1 className="text-2xl font-bold">🏌️‍♂️ Golf Pool Admin</h1>
 
-      {/* Rules Editor */}
-      <section className="space-y-2">
-        <h2 className="font-semibold">Rules Text</h2>
-        <div className="border border-dark-green/50 rounded-lg overflow-hidden">
-          <ReactQuill
-            theme="snow"
-            value={rules}
-            onChange={setRules}
-            modules={modules}
-            formats={formats}
-          />
-        </div>
-        <button
-          onClick={saveRules}
-          className="bg-dark-green text-white px-4 py-2 rounded"
-        >
-          Save Rules
-        </button>
-      </section>
-
-      {/* Batch CSV Upload */}
-      <section className="space-y-2">
-        <h2 className="font-semibold">Batch Upload Golfers (CSV)</h2>
-        <input
-          type="file"
-          accept=".csv"
-          onChange={handleFile}
-          disabled={csvUploading}
-          className="border p-2 rounded"
-        />
-        {csvUploading && <p>Uploading…</p>}
-      </section>
-
-      {/* Golfers Table */}
-      <section className="space-y-4">
-        <h2 className="font-semibold">Golfers</h2>
-        {golfers.length > 0 ? (
-          <table className="w-full table-auto border-collapse">
-            <thead>
-              <tr className="bg-cream">
-                <th className="border px-3 py-1">ID</th>
-                <th className="border px-3 py-1">Name</th>
-                <th className="border px-3 py-1">Salary</th>
-                <th className="border px-3 py-1">Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {golfers.map((g) => (
-                <tr key={g.id}>
-                  <td className="border px-3 py-1">{g.id}</td>
-                  <td className="border px-3 py-1">{g.name}</td>
-                  <td className="border px-3 py-1">${g.salary}</td>
-                  <td className="border px-3 py-1">
-                    <button
-                      onClick={() => deleteGolfer(g.id)}
-                      className="text-red-600 hover:underline"
-                    >
-                      Delete
-                    </button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        ) : (
-          <p>No golfers yet</p>
-        )}
-        <div className="grid grid-cols-2 gap-4 mt-4">
+        {/* Form Title */}
+        <section className="space-y-2">
+          <h2 className="font-semibold">Form Title</h2>
           <input
-            placeholder="Name"
-            value={newGf.name}
-            onChange={(e) => setNewGf({ ...newGf, name: e.target.value })}
-            className="border p-2 rounded"
-          />
-          <input
-            placeholder="Salary"
-            value={newGf.salary}
-            onChange={(e) =>
-              setNewGf({ ...newGf, salary: e.target.value.replace(/\D/, '') })
-            }
-            className="border p-2 rounded"
-          />
-        </div>
-        <button
-          onClick={addGolfer}
-          className="bg-dark-green text-white px-4 py-2 rounded"
-        >
-          Add Golfer
-        </button>
-      </section>
-
-      {/* Clear Buttons */}
-      <section className="flex space-x-4">
-        <button
-          onClick={clearEntries}
-          className="bg-red-600 text-white px-4 py-2 rounded"
-        >
-          Clear All Entries
-        </button>
-        <button
-          onClick={clearGolfers}
-          className="bg-red-600 text-white px-4 py-2 rounded"
-        >
-          Clear All Golfers
-        </button>
-      </section>
-
-      {/* Background Manager */}
-      <section className="space-y-4">
-        <h2 className="font-semibold">Background Images</h2>
-        <div className="flex items-center space-x-2">
-          <input
-            type="file"
-            accept="image/*"
-            onChange={(e) => setBgFile(e.target.files?.[0])}
-            className="border p-1 rounded"
+            type="text"
+            value={formTitle}
+            onChange={(e) => setFormTitle(e.target.value)}
+            className="w-full border border-dark-green/50 p-2 rounded"
           />
           <button
-            onClick={uploadBg}
-            disabled={uploadingBg}
-            className="bg-dark-green text-white px-4 py-1 rounded disabled:opacity-50"
+            onClick={saveFormTitle}
+            className="bg-dark-green text-white px-4 py-2 rounded"
           >
-            {uploadingBg ? 'Uploading…' : 'Upload'}
+            Save Title
           </button>
-        </div>
-        <div className="grid grid-cols-3 gap-4">
-          {backgrounds.map((bg) => (
-            <label key={bg.key} className="border p-2 rounded cursor-pointer">
-              <img
-                src={bg.publicUrl}
-                alt=""
-                className="h-24 w-full object-cover rounded"
-              />
-              <div className="flex items-center mt-1">
-                <input
-                  type="radio"
-                  name="activeBg"
-                  value={bg.publicUrl}
-                  checked={activeBg === bg.publicUrl}
-                  onChange={() => setActiveBg(bg.publicUrl)}
+        </section>
+
+        {/* Rules Editor */}
+        <section className="space-y-2">
+          <h2 className="font-semibold">Rules Text</h2>
+          <div className="border border-dark-green/50 rounded-lg overflow-hidden">
+            <ReactQuill
+              theme="snow"
+              value={rules}
+              onChange={setRules}
+              modules={modules}
+              formats={formats}
+            />
+          </div>
+          <button
+            onClick={saveRules}
+            className="bg-dark-green text-white px-4 py-2 rounded"
+          >
+            Save Rules
+          </button>
+        </section>
+
+        {/* Batch CSV Upload */}
+        <section className="space-y-2">
+          <h2 className="font-semibold">Batch Upload Golfers (CSV)</h2>
+          <input
+            type="file"
+            accept=".csv"
+            onChange={handleFile}
+            disabled={csvUploading}
+            className="border p-2 rounded"
+          />
+          {csvUploading && <p>Uploading…</p>}
+        </section>
+
+        {/* Golfers Table & Add */}
+        <section className="space-y-4">
+          <h2 className="font-semibold">Golfers</h2>
+          {golfers.length ? (
+            <table className="w-full table-auto border-collapse">
+              <thead>
+                <tr className="bg-cream">
+                  <th className="border px-3 py-1">ID</th>
+                  <th className="border px-3 py-1">Name</th>
+                  <th className="border px-3 py-1">Salary</th>
+                  <th className="border px-3 py-1">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {golfers.map((g) => (
+                  <tr key={g.id}>
+                    <td className="border px-3 py-1">{g.id}</td>
+                    <td className="border px-3 py-1">{g.name}</td>
+                    <td className="border px-3 py-1">${g.salary}</td>
+                    <td className="border px-3 py-1">
+                      <button
+                        onClick={() => deleteGolfer(g.id)}
+                        className="text-red-600 hover:underline"
+                      >
+                        Delete
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          ) : (
+            <p>No golfers yet</p>
+          )}
+          <div className="grid grid-cols-2 gap-4 mt-4">
+            <input
+              placeholder="Name"
+              value={newGf.name}
+              onChange={(e) => setNewGf({ ...newGf, name: e.target.value })}
+              className="border p-2 rounded"
+            />
+            <input
+              placeholder="Salary"
+              value={newGf.salary}
+              onChange={(e) =>
+                setNewGf({ ...newGf, salary: e.target.value.replace(/\D/g, '') })
+              }
+              className="border p-2 rounded"
+            />
+          </div>
+          <button
+            onClick={addGolfer}
+            className="bg-dark-green text-white px-4 py-2 rounded"
+          >
+            Add Golfer
+          </button>
+        </section>
+
+        {/* Clear Buttons */}
+        <section className="flex space-x-4">
+          <button
+            onClick={clearEntries}
+            className="bg-red-600 text-white px-4 py-2 rounded"
+          >
+            Clear All Entries
+          </button>
+          <button
+            onClick={clearGolfers}
+            className="bg-red-600 text-white px-4 py-2 rounded"
+          >
+            Clear All Golfers
+          </button>
+        </section>
+
+        {/* Background Manager */}
+        <section className="space-y-4">
+          <h2 className="font-semibold">Background Images</h2>
+          <div className="flex items-center space-x-2">
+            <input
+              type="file"
+              accept="image/*"
+              onChange={(e) => setBgFile(e.target.files?.[0])}
+              className="border p-1 rounded"
+            />
+            <button
+              onClick={uploadBg}
+              disabled={uploadingBg}
+              className="bg-dark-green text-white px-4 py-1 rounded disabled:opacity-50"
+            >
+              {uploadingBg ? 'Uploading…' : 'Upload'}
+            </button>
+          </div>
+          <div className="grid grid-cols-3 gap-4">
+            {backgrounds.map((bg) => (
+              <label key={bg.key} className="border p-2 rounded cursor-pointer">
+                <img
+                  src={bg.publicUrl}
+                  alt=""
+                  className="h-24 w-full object-cover rounded"
                 />
-                <span className="ml-2 truncate">{bg.key}</span>
-              </div>
-            </label>
-          ))}
-        </div>
-        <button
-          onClick={saveBgSelection}
-          className="bg-dark-green text-white px-4 py-2 rounded"
-        >
-          Save Background Selection
-        </button>
-      </section>
-    </div>
+                <div className="flex items-center mt-1">
+                  <input
+                    type="radio"
+                    name="activeBg"
+                    value={bg.publicUrl}
+                    checked={activeBg === bg.publicUrl}
+                    onChange={() => setActiveBg(bg.publicUrl)}
+                  />
+                  <span className="ml-2 truncate">{bg.key}</span>
+                </div>
+              </label>
+            ))}
+          </div>
+          <button
+            onClick={saveBgSelection}
+            className="bg-dark-green text-white px-4 py-2 rounded"
+          >
+            Save Background Selection
+          </button>
+        </section>
+      </div>
+    </>
   )
 }
