@@ -6,13 +6,17 @@ export default function GolferGrid({ golfers, picks, onToggle }) {
     <>
       <div className="mb-2 text-sm text-dark-green">Select Golfers</div>
 
-      <div className="flex flex-wrap justify-end gap-4">
+      <div className="grid grid-cols-3 gap-4 justify-items-end">
         {golfers.map((g) => {
           const checked = picks.includes(g.id);
           return (
             <label
               key={g.id}
-              className="w-1/3 flex items-center space-x-2"
+              className="
+                flex items-center space-x-2 
+                border border-dark-green/50 rounded-lg p-2 
+                w-full
+              "
             >
               <input
                 type="checkbox"
