@@ -166,7 +166,7 @@ export default function Home() {
                 className="w-full border border-dark-green/50 rounded-lg p-3 placeholder-dark-green/70 focus:outline-none focus:ring-2 focus:ring-dark-green"
               />
 
-              <p className="text-sm">
+              <p className="text-base">
                 Picks: <strong>{picks.length}/6</strong> &nbsp;|&nbsp; Total Salary:{' '}
                 <strong>${totalSalary}</strong>/100
               </p>
