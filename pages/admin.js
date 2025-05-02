@@ -27,7 +27,7 @@ export default function Admin() {
     '8px','10px','12px','14px','16px','18px','20px','22px','24px','28px','32px','36px','48px'
   ]
 
-  // toolbar including numeric sizes, color, background
+  // --- Quill toolbar & formats ---
   const modules = {
     toolbar: [
       [{ header: [1, 2, 3, false] }],
@@ -47,7 +47,6 @@ export default function Admin() {
     'link', 'image'
   ]
 
-  // --- Load all data on mount ---
   useEffect(() => {
     // register pixel-size whitelist
     if (typeof window !== 'undefined') {
@@ -57,6 +56,7 @@ export default function Admin() {
       Quill.register(SizeStyle, true)
     }
 
+    // load settings, golfers, backgrounds
     async function loadAll() {
       // settings
       const stRes = await fetch('/api/admin/settings')
@@ -174,17 +174,13 @@ export default function Admin() {
   const uploadBg = async () => {
     if (!bgFile) return alert('Select an image')
     setUploadingBg(true)
-    const formData = new FormData()
-    formData.append('image', bgFile)
+    const fd = new FormData()
+    fd.append('image', bgFile)
     const res = await fetch('/api/admin/backgrounds/upload', {
       method: 'POST',
-      body: formData
+      body: fd
     })
     setUploadingBg(false)
-    if (!res.ok) {
-      const { error } = await res.json()
-      return alert('Upload failed: ' + error)
-    }
     const { key, publicUrl } = await res.json()
     setBackgrounds([{ key, publicUrl }, ...backgrounds])
     setBgFile(null)
