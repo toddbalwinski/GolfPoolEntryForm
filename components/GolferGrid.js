@@ -4,7 +4,7 @@ import React from 'react';
 export default function GolferGrid({ golfers, picks, onToggle }) {
   return (
     <>
-      <div className="mb-2 text-sm text-dark-green">Select Golfers</div>
+      <div className="mb-2 text-sm">Select Golfers</div>
 
       {/* outer wrapper: allows horizontal scrolling on small screens */}
       <div className="border border-dark-green/50 rounded-lg p-4 overflow-x-auto">
@@ -21,18 +21,18 @@ export default function GolferGrid({ golfers, picks, onToggle }) {
                   type="checkbox"
                   checked={checked}
                   onChange={onToggle(g.id)}
-                  className="h-4 w-4 text-dark-green border-dark-green/50 rounded"
+                  className="h-4 w-4 border-dark-green/50 rounded"
                 />
                 {/* salary then a dash */}
-                <span className="font-mono text-dark-green">
+                <span className="font-mono">
                   ${g.salary} -
                 </span>
                 {/* golfer name */}
                 <span
                   className={
                     checked
-                      ? 'font-semibold text-dark-green'
-                      : 'text-dark-green'
+                      ? 'font-semibold'
+                      : ''
                   }
                 >
                   {g.name}
