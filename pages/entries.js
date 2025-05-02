@@ -10,7 +10,7 @@ export default function Entries() {
 
   useEffect(() => {
     async function load() {
-      // 1) Build golfer lookup
+      // 1) build golfer lookup
       const { data: gfList } = await supabase
         .from('golfers')
         .select('id,name,salary')
@@ -18,10 +18,10 @@ export default function Entries() {
       gfList.forEach((g) => { map[g.id] = { name: g.name, salary: g.salary } })
       setGMap(map)
 
-      // 2) Fetch entries
+      // 2) fetch entries
       const { data: enList } = await supabase
         .from('entries')
-        .select('first_name, last_name, email, entry_name, picks')
+        .select('id, first_name, last_name, email, entry_name, picks')
       const parsed = (enList || []).map((e) => ({
         ...e,
         picks:
@@ -35,22 +35,20 @@ export default function Entries() {
     load()
   }, [])
 
-  // CSV export
   const exportCsv = () => {
     const header = [
       'First Name','Last Name','Email','Entry Name',
-      ...Array.from({length:6},(_,i)=>`Golfer ${i+1}`),
-      ...Array.from({length:6},(_,i)=>`Salary ${i+1}`),
+      ...Array.from({ length: 6 }, (_, i) => `Golfer ${i+1}`),
+      ...Array.from({ length: 6 }, (_, i) => `Salary ${i+1}`),
       'Total Salary'
     ]
 
     const rows = entries.map(
       ({ first_name, last_name, email, entry_name, picks }) => {
-        const out = [ first_name, last_name, email, entry_name ]
+        const out = [first_name, last_name, email, entry_name]
         let total = 0
-
         for (let i = 0; i < 6; i++) {
-          const g = gMap[picks[i]] || { name:'', salary:0 }
+          const g = gMap[picks[i]] || { name: '', salary: 0 }
           out.push(g.name, g.salary)
           total += g.salary
         }
@@ -60,19 +58,20 @@ export default function Entries() {
     )
 
     const csv = [header, ...rows]
-      .map(r => r.map(c => `"${String(c).replace(/"/g,'""')}"`).join(','))
+      .map((r) =>
+        r.map((c) => `"${String(c).replace(/"/g, '""')}"`).join(',')
+      )
       .join('\r\n')
 
-    const blob = new Blob([csv], { type:'text/csv' })
-    const url  = URL.createObjectURL(blob)
-    const a    = document.createElement('a')
-    a.href     = url
+    const blob = new Blob([csv], { type: 'text/csv' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
     a.download = 'entries.csv'
     a.click()
     URL.revokeObjectURL(url)
   }
 
-  // clear all entries
   const clearEntries = async () => {
     if (!confirm('Delete ALL entries?')) return
     const { error } = await supabase
@@ -115,46 +114,58 @@ export default function Entries() {
         <table className="w-full table-auto border-collapse">
           <thead>
             <tr className="bg-white">
-              <th className="border px-4 py-2">First Name</th>
-              <th className="border px-4 py-2">Last Name</th>
-              <th className="border px-4 py-2">Email</th>
-              <th className="border px-4 py-2">Entry Name</th>
-
-              {/* interleaved Golfer/Salary */}
+              <th className="border px-4 py-2 whitespace-nowrap">First Name</th>
+              <th className="border px-4 py-2 whitespace-nowrap">Last Name</th>
+              <th className="border px-4 py-2 whitespace-nowrap">Email</th>
+              <th className="border px-4 py-2 whitespace-nowrap">Entry Name</th>
               {Array.from({ length: 6 }).map((_, i) => (
                 <React.Fragment key={i}>
-                  <th className="border px-4 py-2">Golfer {i + 1}</th>
-                  <th className="border px-4 py-2">Salary {i + 1}</th>
+                  <th className="border px-4 py-2 whitespace-nowrap">
+                    Golfer {i + 1}
+                  </th>
+                  <th className="border px-4 py-2 whitespace-nowrap">
+                    Salary {i + 1}
+                  </th>
                 </React.Fragment>
               ))}
-
-              <th className="border px-4 py-2">Total</th>
+              <th className="border px-4 py-2 whitespace-nowrap">Total</th>
             </tr>
           </thead>
-
           <tbody>
             {entries.map((e, idx) => {
               const { first_name, last_name, email, entry_name, picks } = e
               let total = 0
               return (
                 <tr key={idx} className="odd:bg-white even:bg-gray-50">
-                  <td className="border px-4 py-2">{first_name}</td>
-                  <td className="border px-4 py-2">{last_name}</td>
-                  <td className="border px-4 py-2">{email}</td>
-                  <td className="border px-4 py-2">{entry_name}</td>
-
+                  <td className="border px-4 py-2 whitespace-nowrap">
+                    {first_name}
+                  </td>
+                  <td className="border px-4 py-2 whitespace-nowrap">
+                    {last_name}
+                  </td>
+                  <td className="border px-4 py-2 whitespace-nowrap">
+                    {email}
+                  </td>
+                  <td className="border px-4 py-2 whitespace-nowrap">
+                    {entry_name}
+                  </td>
                   {Array.from({ length: 6 }).map((_, i) => {
-                    const g = gMap[picks[i]] || { name:'', salary:0 }
+                    const g = gMap[picks[i]] || { name: '', salary: 0 }
                     total += g.salary
                     return (
                       <React.Fragment key={i}>
-                        <td className="border px-4 py-2">{g.name}</td>
-                        <td className="border px-4 py-2">${g.salary}</td>
+                        <td className="border px-4 py-2 whitespace-nowrap">
+                          {g.name}
+                        </td>
+                        <td className="border px-4 py-2 whitespace-nowrap">
+                          ${g.salary}
+                        </td>
                       </React.Fragment>
                     )
                   })}
-
-                  <td className="border px-4 py-2">${total}</td>
+                  <td className="border px-4 py-2 whitespace-nowrap">
+                    ${total}
+                  </td>
                 </tr>
               )
             })}
