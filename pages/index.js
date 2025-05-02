@@ -113,7 +113,7 @@ export default function Home() {
       style={{ backgroundImage: `url('${bgImage}')` }}
     >
       <div className="relative h-full overflow-y-auto">
-        <div className="max-w-screen-lg mx-auto p-6">
+        <div className="max-w-screen-xl mx-auto p-6">
           <div className="bg-white rounded-2xl shadow-lg p-8 space-y-6">
             {/* Dynamic Title */}
             <h1 className="text-3xl font-bold text-dark-green text-center">
