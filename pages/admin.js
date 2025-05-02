@@ -61,11 +61,23 @@ export default function Admin() {
       setActiveBg(settings.background_image || '')
 
       // backgrounds list
-      const bgRes = await fetch('/api/admin/backgrounds')
-      const { backgrounds: bgList } = await bgRes.json()
-      setBackgrounds(bgList || [])
+      // instead of reading from settings table:
+      const { data: files, error: listErr } = await supabase
+      .storage
+      .from('backgrounds')
+      .list('', { sortBy: { column: 'name', order: 'desc' } })
+      if (listErr) throw listErr
 
-      setLoading(false)
+      const bgList = files.map(file => {
+        const { publicUrl } = supabase
+          .storage
+          .from('backgrounds')
+          .getPublicUrl(file.name)
+        return { key: file.name, publicUrl }
+      })
+
+      setBackgrounds(bgList)
+
     }
     loadAll()
   }, [])
