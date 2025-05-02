@@ -110,8 +110,8 @@ export default function Entries() {
         </div>
       </div>
 
-      <div className="overflow-x-auto">
-        <table className="w-full table-auto border-collapse text-sm">
+      <div className="overflow-x-auto border border-dark-green rounded-lg">
+        <table className="w-full table-auto border-collapse text-sm whitespace-nowrap">
           <thead>
             <tr className="bg-white">
               <th className="border px-4 py-2 whitespace-nowrap">First Name</th>
