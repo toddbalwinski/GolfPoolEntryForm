@@ -139,7 +139,7 @@ export default function Admin() {
       `}</style>
 
       <div className="p-8 max-w-4xl mx-auto space-y-8 font-sans text-dark-green bg-gray-50">
-        <h1 className="text-2xl font-bold">🏌️‍♂️ Golf Pool Admin</h1>
+        <h1 className="text-2xl font-bold">Golf Pool Admin</h1>
 
         {/* Form Title */}
         <section className="space-y-2">
