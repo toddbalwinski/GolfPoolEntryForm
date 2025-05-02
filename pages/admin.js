@@ -6,6 +6,7 @@ import 'react-quill/dist/quill.snow.css'
 const ReactQuill = dynamic(() => import('react-quill'), { ssr: false })
 
 export default function Admin() {
+  // ── State
   const [formTitle, setFormTitle]     = useState('')
   const [rules, setRules]             = useState('')
   const [backgrounds, setBackgrounds] = useState([])
@@ -14,11 +15,12 @@ export default function Admin() {
   const [uploadingBg, setUploadingBg] = useState(false)
   const [loading, setLoading]         = useState(true)
 
-  // pixel sizes for the size-picker
+  // ── Pixel sizes for the size dropdown
   const sizeOptions = [
     '8px','10px','12px','14px','16px','18px','20px','22px','24px','28px','32px','36px','48px'
   ]
 
+  // ── Quill toolbar + formats
   const modules = {
     toolbar: [
       [{ header: [1, 2, 3, false] }],
@@ -38,8 +40,8 @@ export default function Admin() {
     'link', 'image'
   ]
 
+  // ── On mount: register attributors & load data
   useEffect(() => {
-    // register pixel sizes & color/bg attributors
     if (typeof window !== 'undefined') {
       const Quill = require('react-quill').Quill
       const SizeStyle = Quill.import('attributors/style/size')
@@ -50,10 +52,8 @@ export default function Admin() {
       const BgStyle = Quill.import('attributors/style/background')
       Quill.register(BgStyle, true)
     }
-
-    // fetch settings & backgrounds
     async function loadAll() {
-      // form title & rules
+      // settings
       const stRes = await fetch('/api/admin/settings')
       const { settings } = await stRes.json()
       setFormTitle(settings.form_title || 'Golf Pool Entry Form')
@@ -70,6 +70,7 @@ export default function Admin() {
     loadAll()
   }, [])
 
+  // ── Handlers
   const saveFormTitle = async () => {
     await fetch('/api/admin/settings', {
       method: 'POST',
@@ -86,16 +87,6 @@ export default function Admin() {
       body: JSON.stringify({ key: 'rules', value: rules })
     })
     alert('Rules saved')
-  }
-
-  const clearEntries = async () => {
-    if (!confirm('Clear all entries?')) return
-    const res = await fetch('/api/admin/entries/reset', { method: 'POST' })
-    if (!res.ok) {
-      const { error } = await res.json()
-      return alert('Error clearing entries: ' + error)
-    }
-    alert('Entries cleared')
   }
 
   const uploadBg = async () => {
@@ -126,9 +117,7 @@ export default function Admin() {
     alert('Background updated')
   }
 
-  if (loading) {
-    return <p className="p-6 text-center">Loading admin…</p>
-  }
+  if (loading) return <p className="p-6 text-center">Loading admin…</p>
 
   return (
     <>
@@ -186,16 +175,6 @@ export default function Admin() {
             className="bg-dark-green text-white px-4 py-2 rounded"
           >
             Save Rules
-          </button>
-        </section>
-
-        {/* Clear Entries */}
-        <section>
-          <button
-            onClick={clearEntries}
-            className="bg-red-600 text-white px-4 py-2 rounded"
-          >
-            Clear All Entries
           </button>
         </section>
 

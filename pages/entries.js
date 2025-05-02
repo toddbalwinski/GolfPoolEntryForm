@@ -1,147 +1,165 @@
 // pages/entries.js
-import { useState, useEffect, Fragment } from 'react';
-import { supabase } from '../lib/supabase';
+import { useState, useEffect } from 'react'
+import { supabase } from '../lib/supabase'
 
-export default function EntriesPage() {
-  const [entries, setEntries]     = useState([]);
-  const [golferMap, setGolferMap] = useState({});
-  const [loading, setLoading]     = useState(true);
-  const [clearing, setClearing]   = useState(false);
+export default function Entries() {
+  const [entries, setEntries] = useState([])
+  const [golfers, setGolfers] = useState({})
+  const [loading, setLoading] = useState(true)
 
+  // load entries + golfer lookup
   useEffect(() => {
-    async function loadData() {
-      // fetch golfers for lookup
-      const { data: golfers, error: gErr } = await supabase
+    async function load() {
+      // fetch golfers into a map for salary lookup
+      const { data: gfList } = await supabase
         .from('golfers')
-        .select('id,name,salary');
-      if (gErr) {
-        console.error('Error loading golfers', gErr);
-      } else {
-        const map = {};
-        golfers.forEach((g) => {
-          map[String(g.id)] = { name: g.name, salary: g.salary };
-        });
-        setGolferMap(map);
-      }
+        .select('id, name, salary')
+      const gfMap = gfList.reduce((m, g) => {
+        m[g.id] = { name: g.name, salary: g.salary }
+        return m
+      }, {})
+      setGolfers(gfMap)
 
       // fetch entries
-      const { data: ents, error: eErr } = await supabase
+      const { data: en } = await supabase
         .from('entries')
-        .select('first_name,last_name,email,entry_name,picks,created_at')
-        .order('created_at', { ascending: false });
-      if (eErr) {
-        console.error('Error loading entries', eErr);
-      } else {
-        setEntries(ents);
+        .select('*')
+      // parse out picks array if stored as JSON string
+      const parsed = en.map((e) => ({
+        ...e,
+        picks: typeof e.picks === 'string' ? JSON.parse(e.picks) : e.picks
+      }))
+      setEntries(parsed)
+      setLoading(false)
+    }
+    load()
+  }, [])
+
+  // build and download CSV
+  const exportCsv = () => {
+    // header
+    const header = [
+      'First Name',
+      'Last Name',
+      'Email',
+      'Entry Name',
+      ...Array.from({ length: 6 }, (_, i) => `Golfer ${i + 1}`),
+      ...Array.from({ length: 6 }, (_, i) => `Salary ${i + 1}`),
+      'Total Salary'
+    ]
+
+    // rows
+    const rows = entries.map(({ first, last, email, entryName, picks }) => {
+      const golferCols = []
+      const salaryCols = []
+      let total = 0
+      picks.forEach((id) => {
+        const g = golfers[id] || { name: '', salary: 0 }
+        golferCols.push(g.name)
+        salaryCols.push(g.salary)
+        total += g.salary
+      })
+      // pad to 6 if less (shouldn’t happen)
+      while (golferCols.length < 6) {
+        golferCols.push('')
+        salaryCols.push('')
       }
+      return [
+        first,
+        last,
+        email,
+        entryName,
+        ...golferCols,
+        ...salaryCols,
+        total
+      ]
+    })
 
-      setLoading(false);
-    }
-    loadData();
-  }, []);
+    // combine and download
+    const csvContent =
+      [header, ...rows]
+        .map((r) =>
+          r
+            .map((cell) =>
+              // escape quotes
+              `"${String(cell).replace(/"/g, '""')}"`
+            )
+            .join(',')
+        )
+        .join('\r\n')
 
-  const clearEntries = async () => {
-    if (!confirm('Delete ALL entries?')) return;
-    setClearing(true);
-    const res = await fetch('/api/admin/entries/reset', { method: 'POST' });
-    setClearing(false);
-    if (!res.ok) {
-      const { error } = await res.json();
-      return alert('Failed to clear entries: ' + error);
-    }
-    setEntries([]);
-    alert('All entries cleared');
-  };
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = 'entries.csv'
+    a.click()
+    URL.revokeObjectURL(url)
+  }
 
   if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-cream text-dark-green">
-        <p>Loading entries…</p>
-      </div>
-    );
+    return <p className="p-6 text-center">Loading entries…</p>
   }
 
   return (
-    <div className="min-h-screen p-6 bg-cream text-dark-green font-sans">
-      <div className="max-w-6xl mx-auto bg-white rounded-2xl shadow-lg p-8 space-y-6">
-        <h1 className="text-3xl font-bold text-center">All Pool Entries</h1>
-
+    <div className="p-6 max-w-screen-lg mx-auto space-y-4">
+      <div className="flex justify-between items-center">
+        <h1 className="text-2xl font-bold text-dark-green">All Entries</h1>
         <button
-          onClick={clearEntries}
-          disabled={clearing}
-          className="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 disabled:opacity-50"
+          onClick={exportCsv}
+          className="bg-dark-green text-white px-4 py-2 rounded"
         >
-          {clearing ? 'Clearing…' : 'Clear All Entries'}
+          Export as CSV
         </button>
-
-        <div className="overflow-x-auto">
-          <table className="w-full table-auto border-collapse text-sm">
-            <thead>
-              <tr className="bg-cream">
-                <th className="border px-2 py-1">First</th>
-                <th className="border px-2 py-1">Last</th>
-                <th className="border px-2 py-1">Email</th>
-                <th className="border px-2 py-1">Entry</th>
-
-                {[1, 2, 3, 4, 5, 6].flatMap((i) => (
-                  <Fragment key={i}>
-                    <th className="border px-2 py-1">Golfer {i}</th>
-                    <th className="border px-2 py-1">Salary {i}</th>
-                  </Fragment>
-                ))}
-
-                <th className="border px-2 py-1">Total Salary</th>
-                <th className="border px-2 py-1">Timestamp</th>
-              </tr>
-            </thead>
-            <tbody>
-              {entries.length > 0 ? (
-                entries.map((e, idx) => {
-                  // compute total salary
-                  const total = (e.picks || [])
-                    .slice(0, 6)
-                    .reduce((sum, pid) => {
-                      const info = golferMap[pid];
-                      return sum + (info?.salary || 0);
-                    }, 0);
-
-                  return (
-                    <tr key={idx}>
-                      <td className="border px-2 py-1">{e.first_name}</td>
-                      <td className="border px-2 py-1">{e.last_name}</td>
-                      <td className="border px-2 py-1">{e.email}</td>
-                      <td className="border px-2 py-1">{e.entry_name}</td>
-
-                      {[0, 1, 2, 3, 4, 5].map((slot) => {
-                        const pid = e.picks?.[slot];
-                        const info = golferMap[pid] || { name: '', salary: '' };
-                        return (
-                          <Fragment key={slot}>
-                            <td className="border px-2 py-1">{info.name}</td>
-                            <td className="border px-2 py-1">{info.salary}</td>
-                          </Fragment>
-                        );
-                      })}
-
-                      <td className="border px-2 py-1 font-semibold">{total}</td>
-                      <td className="border px-2 py-1">{e.created_at}</td>
-                    </tr>
-                  );
-                })
-              ) : (
-                <tr>
-                  <td
-                    colSpan={4 + 2 * 6 + 2}
-                    className="border px-2 py-1 text-center"
-                  >
-                    No entries yet.
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
       </div>
+
+      <table className="w-full table-auto border-collapse">
+        <thead>
+          <tr className="bg-cream">
+            <th className="border px-2 py-1">First</th>
+            <th className="border px-2 py-1">Last</th>
+            <th className="border px-2 py-1">Email</th>
+            <th className="border px-2 py-1">Entry</th>
+            {Array.from({ length: 6 }).map((_, i) => (
+              <th key={`g${i}`} className="border px-2 py-1">{`Golfer ${i+1}`}</th>
+            ))}
+            {Array.from({ length: 6 }).map((_, i) => (
+              <th key={`s${i}`} className="border px-2 py-1">{`Salary ${i+1}`}</th>
+            ))}
+            <th className="border px-2 py-1">Total</th>
+          </tr>
+        </thead>
+        <tbody>
+          {entries.map((e) => {
+            const { first, last, email, entryName, picks } = e
+            const golferCols = []
+            const salaryCols = []
+            let total = 0
+            picks.forEach((id) => {
+              const g = golfers[id] || { name: '', salary: 0 }
+              golferCols.push(g.name)
+              salaryCols.push(g.salary)
+              total += g.salary
+            })
+            while (golferCols.length < 6) golferCols.push(''), salaryCols.push('')
+            return (
+              <tr key={`${email}-${entryName}`} className="odd:bg-white even:bg-gray-50">
+                <td className="border px-2 py-1">{first}</td>
+                <td className="border px-2 py-1">{last}</td>
+                <td className="border px-2 py-1">{email}</td>
+                <td className="border px-2 py-1">{entryName}</td>
+                {golferCols.map((n, i) => (
+                  <td key={i} className="border px-2 py-1">{n}</td>
+                ))}
+                {salaryCols.map((s, i) => (
+                  <td key={i} className="border px-2 py-1">${s}</td>
+                ))}
+                <td className="border px-2 py-1">${total}</td>
+              </tr>
+            )
+          })}
+        </tbody>
+      </table>
     </div>
-  );
+  )
 }
