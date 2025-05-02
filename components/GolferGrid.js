@@ -11,29 +11,41 @@ export default function GolferGrid({ golfers, picks, onToggle }) {
       <div
         className="
           grid
-          grid-cols-1       /* 1 col on very small screens */
-          sm:grid-cols-2    /* 2 cols @640px+ */
-          md:grid-cols-3    /* 3 cols @768px+ */
-          lg:grid-cols-4    /* 4 cols @1024px+ */
+          grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4
           gap-3
         "
       >
-        {golfers.map((g) => (
-          <label
-            key={g.id}
-            className="flex items-center border border-dark-green/50 rounded-lg p-2 hover:bg-dark-green/10"
-          >
-            <input
-              type="checkbox"
-              checked={picks.includes(g.id)}
-              onChange={onToggle(g.id)}
-              className="mr-2 w-4 h-4"
-            />
-            <span className="text-sm">
-              ${g.salary} – {g.name}
-            </span>
-          </label>
-        ))}
+        {golfers.map((g) => {
+          const isPicked = picks.includes(g.id)
+          return (
+            <label
+              key={g.id}
+              className={`
+                flex items-center
+                border 
+                rounded-lg 
+                p-2 
+                hover:bg-dark-green/10 
+                ${isPicked ? 'border-dark-green bg-dark-green/10' : 'border-dark-green/50'}
+              `}
+            >
+              <input
+                type="checkbox"
+                checked={isPicked}
+                onChange={onToggle(g.id)}
+                className="mr-2 w-4 h-4"
+              />
+              <span
+                className={`
+                  text-sm
+                  ${isPicked ? 'font-bold' : 'font-sm'}
+                `}
+              >
+                ${g.salary} – {g.name}
+              </span>
+            </label>
+          )
+        })}
       </div>
     </fieldset>
   )
