@@ -121,7 +121,7 @@ export default function Home() {
             </h1>
 
             {/* Rules (rendered from Quill HTML) */}
-            <section className="bg-cream p-4 rounded-lg">
+            <section className="bg-gray-50 p-4 rounded-lg">
               <div
                 className="
                   prose prose-sm

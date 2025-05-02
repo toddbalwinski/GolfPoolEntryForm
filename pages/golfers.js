@@ -110,7 +110,7 @@ export default function GolfersManager() {
         {golfers.length ? (
           <table className="w-full table-auto border-collapse">
             <thead>
-              <tr className="bg-cream">
+              <tr className="bg-gray-50">
                 <th className="border px-3 py-1">ID</th>
                 <th className="border px-3 py-1">Name</th>
                 <th className="border px-3 py-1">Salary</th>
