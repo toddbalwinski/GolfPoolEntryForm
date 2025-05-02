@@ -4,7 +4,7 @@
 
 /* apply your cream background and default font/text color */
 body {
-  @apply bg-cream text-dark-green font-sans;
+  @apply bg-gray-50 text-dark-green font-sans;
   
 }
 
