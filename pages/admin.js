@@ -35,7 +35,7 @@ export default function Admin() {
     ]
   }
   const formats = [
-    'header', 'size',
+    'size',
     'bold', 'italic', 'underline', 'strike',
     'color', 'background',
     'list', 'bullet',
