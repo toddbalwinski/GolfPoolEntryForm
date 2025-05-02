@@ -29,7 +29,7 @@ export default function GolferGrid({ golfers, picks, onToggle }) {
               onChange={onToggle(g.id)}
               className="mr-2 w-4 h-4"
             />
-            <span className="text-base">
+            <span className="text-sm">
               ${g.salary} – {g.name}
             </span>
           </label>
