@@ -1,31 +1,34 @@
 // pages/api/admin/settings.js
-import { createClient } from '@supabase/supabase-js'
-
-const supabase = createClient(
-  process.env.SUPABASE_URL,
-  process.env.SUPABASE_SERVICE_ROLE_KEY
-)
+import { supabaseAdmin } from '../../../lib/supabase'
 
 export default async function handler(req, res) {
+  // Only allow GET & POST
   if (req.method === 'GET') {
-    const { data, error } = await supabase
+    const { data, error } = await supabaseAdmin
       .from('settings')
       .select('key, value')
-    if (error) return res.status(500).json({ error: error.message })
-    // return as an object map
-    const map = data.reduce((acc, { key, value }) => {
-      acc[key] = value
-      return acc
+    if (error) {
+      return res.status(500).json({ error: error.message })
+    }
+    // Turn array of { key, value } into an object map
+    const map = data.reduce((o, { key, value }) => {
+      o[key] = value
+      return o
     }, {})
     return res.status(200).json({ settings: map })
   }
 
   if (req.method === 'POST') {
     const { key, value } = req.body
-    const { error } = await supabase
+    if (typeof key !== 'string' || typeof value !== 'string') {
+      return res.status(400).json({ error: 'Invalid payload' })
+    }
+    const { error } = await supabaseAdmin
       .from('settings')
       .upsert({ key, value })
-    if (error) return res.status(500).json({ error: error.message })
+    if (error) {
+      return res.status(500).json({ error: error.message })
+    }
     return res.status(200).json({ updated: true })
   }
 
