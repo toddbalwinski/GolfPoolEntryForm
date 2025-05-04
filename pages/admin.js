@@ -1,57 +1,53 @@
 // pages/admin.js
-
-import React, { useState, useEffect } from 'react'
+import { useState, useEffect } from 'react'
+import dynamic from 'next/dynamic'
 import 'react-quill/dist/quill.snow.css'
-import { supabase } from '../lib/supabase'
 
-// Only load and configure ReactQuill on the client
-let ReactQuill = () => null
-if (typeof window !== 'undefined') {
-  const RQ = require('react-quill')
-  const Quill = RQ.Quill
-
-  // 1) Register exact-pixel font-size attributor
-  const Size = Quill.import('attributors/style/size')
-  Size.whitelist = [
-    '8px','10px','12px','14px','16px','18px',
-    '20px','22px','24px','28px','32px','36px','48px'
-  ]
-  Quill.register(Size, true)
-
-  // 2) Register color & background attributors
-  Quill.register(Quill.import('attributors/style/color'),      true)
-  Quill.register(Quill.import('attributors/style/background'), true)
-
-  // 3) Grab the actual ReactQuill component
-  ReactQuill = RQ.default
-}
+const ReactQuill = dynamic(() => import('react-quill'), { ssr: false })
 
 export default function Admin() {
-  // ── State
-  const [loading,      setLoading]      = useState(true)
-  const [settings,     setSettings]     = useState({})
-  const [formTitle,    setFormTitle]    = useState('')
-  const [rules,        setRules]        = useState('')
-  const [backgrounds,  setBackgrounds]  = useState([])
-  const [activeBgKey,  setActiveBgKey]  = useState('')
-  const [activeBgUrl,  setActiveBgUrl]  = useState('')
-  const [bgFile,       setBgFile]       = useState(null)
-  const [uploading,    setUploading]    = useState(false)
+  const [loading,      setLoading]     = useState(true)
+  const [settings,     setSettings]    = useState({})
+  const [formTitle,    setFormTitle]   = useState('')
+  const [rules,        setRules]       = useState('')
+  const [backgrounds,  setBackgrounds] = useState([])
+  const [activeBgKey,  setActiveBgKey] = useState('')
+  const [activeBgUrl,  setActiveBgUrl] = useState('')
+  const [bgFile,       setBgFile]      = useState(null)
+  const [uploading,    setUploading]   = useState(false)
 
-  // ── Load settings + backgrounds
+  // 1) Register Quill size/color/bg **client-only**
+  useEffect(() => {
+    async function setupQuill() {
+      const { Quill } = await import('react-quill')
+      // pixel-size attributor
+      const Size = Quill.import('attributors/style/size')
+      Size.whitelist = [
+        '8px','10px','12px','14px','16px','18px',
+        '20px','22px','24px','28px','32px','36px','48px'
+      ]
+      Quill.register(Size, true)
+      // color & background
+      Quill.register(Quill.import('attributors/style/color'),      true)
+      Quill.register(Quill.import('attributors/style/background'), true)
+    }
+    setupQuill()
+  }, [])
+
+  // 2) Load settings + backgrounds on mount
   useEffect(() => {
     async function loadAll() {
       try {
         // settings
-        const st = await fetch('/api/admin/settings')
-        const { settings: s } = await st.json()
+        let r = await fetch('/api/admin/settings')
+        let { settings: s } = await r.json()
         setSettings(s)
         setFormTitle(s.form_title || '')
         setRules(s.rules || '')
 
         // backgrounds
-        const bg = await fetch('/api/admin/backgrounds')
-        const { backgrounds: bgs } = await bg.json()
+        r = await fetch('/api/admin/backgrounds')
+        let { backgrounds: bgs } = await r.json()
         setBackgrounds(bgs)
       } catch (e) {
         console.error(e)
@@ -63,42 +59,42 @@ export default function Admin() {
     loadAll()
   }, [])
 
-  // ── Sync selected background
+  // Sync active background
   useEffect(() => {
     if (!loading && settings.background_image) {
       setActiveBgUrl(settings.background_image)
-      const found = backgrounds.find(b => b.publicUrl === settings.background_image)
+      let found = backgrounds.find(b => b.publicUrl === settings.background_image)
       if (found) setActiveBgKey(found.key)
     }
   }, [loading, settings, backgrounds])
 
-  // ── Helper to save a single setting
+  // Save a single setting
   const saveSetting = async (key, value) => {
-    const res = await fetch('/api/admin/settings', {
+    let res = await fetch('/api/admin/settings', {
       method: 'POST',
       headers: { 'Content-Type':'application/json' },
       body: JSON.stringify({ key, value })
     })
     if (!res.ok) {
-      const { error } = await res.json()
+      let { error } = await res.json()
       return alert('Save failed: ' + error)
     }
     alert('Saved!')
   }
 
-  // ── Upload a new background
+  // Upload new background
   const uploadBg = async () => {
     if (!bgFile) return alert('Pick a file first')
     setUploading(true)
     try {
       const fd = new FormData()
       fd.append('image', bgFile)
-      const res = await fetch('/api/admin/backgrounds/upload', {
+      let res = await fetch('/api/admin/backgrounds/upload', {
         method: 'POST',
         body: fd
       })
       if (!res.ok) throw new Error((await res.json()).error)
-      const { key, publicUrl } = await res.json()
+      let { key, publicUrl } = await res.json()
       setBackgrounds(b => [{ key, publicUrl }, ...b])
       setBgFile(null)
       setActiveBgKey(key)
@@ -112,18 +108,18 @@ export default function Admin() {
     }
   }
 
-  // ── Apply selected as background
+  // Set selected image as background
   const handleSetBackground = () => {
     if (!activeBgKey) return alert('Select one first')
     saveSetting('background_image', activeBgUrl)
   }
 
-  // ── Delete selected background
+  // Delete selected background
   const handleDeleteSelected = async () => {
     if (!activeBgKey) return alert('Select one to delete')
-    if (!confirm('Really delete this image?')) return
+    if (!confirm('Really delete?')) return
     try {
-      const res = await fetch('/api/admin/backgrounds/delete', {
+      let res = await fetch('/api/admin/backgrounds/delete', {
         method: 'POST',
         headers: { 'Content-Type':'application/json' },
         body: JSON.stringify({ key: activeBgKey })
@@ -138,13 +134,11 @@ export default function Admin() {
       alert('Deleted!')
     } catch (e) {
       console.error(e)
-      alert('Delete failed: ' + e.message)
+      alert('Delete failed: '+e.message)
     }
   }
 
-  if (loading) {
-    return <p className="p-6 text-center">Loading admin…</p>
-  }
+  if (loading) return <p className="p-6 text-center">Loading admin…</p>
 
   return (
     <div className="p-8 max-w-4xl mx-auto space-y-8 bg-gray-50 text-dark-green font-sans">
