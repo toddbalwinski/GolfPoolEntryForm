@@ -16,11 +16,12 @@ export default function Admin() {
   const [bgFile,       setBgFile]      = useState(null)
   const [uploading,    setUploading]   = useState(false)
 
-  // 1) Register Quill size/color/bg **client-only**
+  // ── 1) Register Quill attributors on the client only
   useEffect(() => {
     async function setupQuill() {
-      const { Quill } = await import('react-quill')
-      // pixel-size attributor
+      const mod = await import('react-quill')
+      const Quill = mod.default.Quill     // ← grab Quill off the default export
+      // pixel-perfect size attributor
       const Size = Quill.import('attributors/style/size')
       Size.whitelist = [
         '8px','10px','12px','14px','16px','18px',
@@ -34,18 +35,16 @@ export default function Admin() {
     setupQuill()
   }, [])
 
-  // 2) Load settings + backgrounds on mount
+  // ── 2) Load all settings + backgrounds
   useEffect(() => {
     async function loadAll() {
       try {
-        // settings
         let r = await fetch('/api/admin/settings')
         let { settings: s } = await r.json()
         setSettings(s)
         setFormTitle(s.form_title || '')
         setRules(s.rules || '')
 
-        // backgrounds
         r = await fetch('/api/admin/backgrounds')
         let { backgrounds: bgs } = await r.json()
         setBackgrounds(bgs)
@@ -59,42 +58,42 @@ export default function Admin() {
     loadAll()
   }, [])
 
-  // Sync active background
+  // Keep activeBgUrl/Key in sync with settings
   useEffect(() => {
     if (!loading && settings.background_image) {
       setActiveBgUrl(settings.background_image)
-      let found = backgrounds.find(b => b.publicUrl === settings.background_image)
+      const found = backgrounds.find(b => b.publicUrl === settings.background_image)
       if (found) setActiveBgKey(found.key)
     }
   }, [loading, settings, backgrounds])
 
-  // Save a single setting
+  // Save one setting
   const saveSetting = async (key, value) => {
-    let res = await fetch('/api/admin/settings', {
+    const res = await fetch('/api/admin/settings', {
       method: 'POST',
       headers: { 'Content-Type':'application/json' },
-      body: JSON.stringify({ key, value })
+      body: JSON.stringify({ key, value }),
     })
     if (!res.ok) {
-      let { error } = await res.json()
+      const { error } = await res.json()
       return alert('Save failed: ' + error)
     }
     alert('Saved!')
   }
 
-  // Upload new background
+  // Upload a new bg image
   const uploadBg = async () => {
     if (!bgFile) return alert('Pick a file first')
     setUploading(true)
     try {
       const fd = new FormData()
       fd.append('image', bgFile)
-      let res = await fetch('/api/admin/backgrounds/upload', {
+      const res = await fetch('/api/admin/backgrounds/upload', {
         method: 'POST',
-        body: fd
+        body: fd,
       })
       if (!res.ok) throw new Error((await res.json()).error)
-      let { key, publicUrl } = await res.json()
+      const { key, publicUrl } = await res.json()
       setBackgrounds(b => [{ key, publicUrl }, ...b])
       setBgFile(null)
       setActiveBgKey(key)
@@ -108,21 +107,21 @@ export default function Admin() {
     }
   }
 
-  // Set selected image as background
+  // Set the selected bg as active
   const handleSetBackground = () => {
     if (!activeBgKey) return alert('Select one first')
     saveSetting('background_image', activeBgUrl)
   }
 
-  // Delete selected background
+  // Delete selected bg from storage
   const handleDeleteSelected = async () => {
     if (!activeBgKey) return alert('Select one to delete')
-    if (!confirm('Really delete?')) return
+    if (!confirm('Really delete this image?')) return
     try {
-      let res = await fetch('/api/admin/backgrounds/delete', {
+      const res = await fetch('/api/admin/backgrounds/delete', {
         method: 'POST',
         headers: { 'Content-Type':'application/json' },
-        body: JSON.stringify({ key: activeBgKey })
+        body: JSON.stringify({ key: activeBgKey }),
       })
       if (!res.ok) throw new Error((await res.json()).error)
       setBackgrounds(b => b.filter(x => x.key !== activeBgKey))
@@ -134,7 +133,7 @@ export default function Admin() {
       alert('Deleted!')
     } catch (e) {
       console.error(e)
-      alert('Delete failed: '+e.message)
+      alert('Delete failed: ' + e.message)
     }
   }
 
@@ -176,9 +175,9 @@ export default function Admin() {
                   '20px','22px','24px','28px','32px','36px','48px'
                 ] }],
                 ['bold','italic','underline','strike'],
-                [{ color:[] },{ background:[] }],
-                [{ list:'ordered' },{ list:'bullet' }],
-                ['link','image'],['clean']
+                [{ color: [] }, { background: [] }],
+                [{ list: 'ordered' }, { list: 'bullet' }],
+                ['link','image'], ['clean'],
               ]
             }}
             formats={[
@@ -198,7 +197,6 @@ export default function Admin() {
       {/* Background Images */}
       <section>
         <h2 className="font-semibold">Background Images</h2>
-
         <div className="flex items-center space-x-2">
           <input
             type="file"
@@ -214,7 +212,6 @@ export default function Admin() {
             {uploading ? 'Uploading…' : 'Upload'}
           </button>
         </div>
-
         <div className="grid grid-cols-3 gap-4 mt-4">
           {backgrounds.map(({ key, publicUrl }) => (
             <label
@@ -242,7 +239,6 @@ export default function Admin() {
             </label>
           ))}
         </div>
-
         <div className="mt-4 flex space-x-4">
           <button
             onClick={handleSetBackground}
