@@ -1,56 +1,57 @@
 // pages/admin.js
-import { useState, useEffect } from 'react'
-import dynamic from 'next/dynamic'
+
+import React, { useState, useEffect } from 'react'
 import 'react-quill/dist/quill.snow.css'
+import { supabase } from '../lib/supabase'
 
-// ── 1) Dynamically import ReactQuill *and* register our custom attributors before it ever mounts:
-const ReactQuill = dynamic(
-  () =>
-    import('react-quill').then((QuillModule) => {
-      const Quill = QuillModule.Quill
+// Only load and configure ReactQuill on the client
+let ReactQuill = () => null
+if (typeof window !== 'undefined') {
+  const RQ = require('react-quill')
+  const Quill = RQ.Quill
 
-      // Register exact-pixel sizes
-      const Size = Quill.import('attributors/style/size')
-      Size.whitelist = [
-        '8px','10px','12px','14px','16px','18px',
-        '20px','22px','24px','28px','32px','36px','48px'
-      ]
-      Quill.register(Size, true)
+  // 1) Register exact-pixel font-size attributor
+  const Size = Quill.import('attributors/style/size')
+  Size.whitelist = [
+    '8px','10px','12px','14px','16px','18px',
+    '20px','22px','24px','28px','32px','36px','48px'
+  ]
+  Quill.register(Size, true)
 
-      // Register color & background
-      Quill.register(Quill.import('attributors/style/color'),      true)
-      Quill.register(Quill.import('attributors/style/background'), true)
+  // 2) Register color & background attributors
+  Quill.register(Quill.import('attributors/style/color'),      true)
+  Quill.register(Quill.import('attributors/style/background'), true)
 
-      return QuillModule.default
-    }),
-  { ssr: false }
-)
+  // 3) Grab the actual ReactQuill component
+  ReactQuill = RQ.default
+}
 
 export default function Admin() {
-  const [loading,     setLoading]      = useState(true)
-  const [settings,    setSettings]     = useState({})
-  const [formTitle,   setFormTitle]    = useState('')
-  const [rules,       setRules]        = useState('')
-  const [backgrounds, setBackgrounds]  = useState([])
-  const [activeBgKey, setActiveBgKey]  = useState('')
-  const [activeBgUrl, setActiveBgUrl]  = useState('')
-  const [bgFile,      setBgFile]       = useState(null)
-  const [uploading,   setUploading]    = useState(false)
+  // ── State
+  const [loading,      setLoading]      = useState(true)
+  const [settings,     setSettings]     = useState({})
+  const [formTitle,    setFormTitle]    = useState('')
+  const [rules,        setRules]        = useState('')
+  const [backgrounds,  setBackgrounds]  = useState([])
+  const [activeBgKey,  setActiveBgKey]  = useState('')
+  const [activeBgUrl,  setActiveBgUrl]  = useState('')
+  const [bgFile,       setBgFile]       = useState(null)
+  const [uploading,    setUploading]    = useState(false)
 
-  // ── Load settings + backgrounds on mount
+  // ── Load settings + backgrounds
   useEffect(() => {
-    async function load() {
+    async function loadAll() {
       try {
         // settings
-        const res1 = await fetch('/api/admin/settings')
-        const { settings: s } = await res1.json()
+        const st = await fetch('/api/admin/settings')
+        const { settings: s } = await st.json()
         setSettings(s)
         setFormTitle(s.form_title || '')
         setRules(s.rules || '')
 
         // backgrounds
-        const res2 = await fetch('/api/admin/backgrounds')
-        const { backgrounds: bgs } = await res2.json()
+        const bg = await fetch('/api/admin/backgrounds')
+        const { backgrounds: bgs } = await bg.json()
         setBackgrounds(bgs)
       } catch (e) {
         console.error(e)
@@ -59,10 +60,10 @@ export default function Admin() {
         setLoading(false)
       }
     }
-    load()
+    loadAll()
   }, [])
 
-  // ── Sync the selected background key/url
+  // ── Sync selected background
   useEffect(() => {
     if (!loading && settings.background_image) {
       setActiveBgUrl(settings.background_image)
@@ -71,7 +72,7 @@ export default function Admin() {
     }
   }, [loading, settings, backgrounds])
 
-  // ── Generic setting save helper
+  // ── Helper to save a single setting
   const saveSetting = async (key, value) => {
     const res = await fetch('/api/admin/settings', {
       method: 'POST',
@@ -85,14 +86,17 @@ export default function Admin() {
     alert('Saved!')
   }
 
-  // ── Upload a new background image
+  // ── Upload a new background
   const uploadBg = async () => {
     if (!bgFile) return alert('Pick a file first')
     setUploading(true)
     try {
       const fd = new FormData()
       fd.append('image', bgFile)
-      const res = await fetch('/api/admin/backgrounds/upload', { method:'POST', body:fd })
+      const res = await fetch('/api/admin/backgrounds/upload', {
+        method: 'POST',
+        body: fd
+      })
       if (!res.ok) throw new Error((await res.json()).error)
       const { key, publicUrl } = await res.json()
       setBackgrounds(b => [{ key, publicUrl }, ...b])
@@ -108,21 +112,21 @@ export default function Admin() {
     }
   }
 
-  // ── Set the selected image as current background
+  // ── Apply selected as background
   const handleSetBackground = () => {
     if (!activeBgKey) return alert('Select one first')
     saveSetting('background_image', activeBgUrl)
   }
 
-  // ── Delete the selected background
+  // ── Delete selected background
   const handleDeleteSelected = async () => {
     if (!activeBgKey) return alert('Select one to delete')
     if (!confirm('Really delete this image?')) return
     try {
       const res = await fetch('/api/admin/backgrounds/delete', {
-        method:'POST',
-        headers:{ 'Content-Type':'application/json' },
-        body: JSON.stringify({ key:activeBgKey })
+        method: 'POST',
+        headers: { 'Content-Type':'application/json' },
+        body: JSON.stringify({ key: activeBgKey })
       })
       if (!res.ok) throw new Error((await res.json()).error)
       setBackgrounds(b => b.filter(x => x.key !== activeBgKey))
@@ -134,7 +138,7 @@ export default function Admin() {
       alert('Deleted!')
     } catch (e) {
       console.error(e)
-      alert('Delete failed: '+e.message)
+      alert('Delete failed: ' + e.message)
     }
   }
 
