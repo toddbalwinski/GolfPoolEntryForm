@@ -196,8 +196,8 @@ export default function GolfersPage() {
         <div className="overflow-x-auto">
           <table
             className="
-              min-w-full 
-              bg-white 
+              min-w-full
+              bg-white
               border-2 border-dark-green 
               rounded-lg 
               overflow-hidden
@@ -205,7 +205,7 @@ export default function GolfersPage() {
               border-collapse
             "
           >
-            <thead className="bg-dark-green">
+            <thead className="bg-grey-30">
               <tr className="divide-x divide-gray-200">
                 {['ID','Name','Salary','Actions'].map((h) => (
                   <th
