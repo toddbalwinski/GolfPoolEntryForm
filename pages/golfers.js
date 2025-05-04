@@ -10,7 +10,7 @@ export default function GolfersPage() {
   const [csvFile, setCsvFile]     = useState(null)
   const [busy, setBusy]           = useState(false)
 
-  // load all golfers
+  // 1) Load all golfers
   const loadGolfers = async () => {
     setLoading(true)
     const { data, error } = await supabase
@@ -26,9 +26,11 @@ export default function GolfersPage() {
     setLoading(false)
   }
 
-  useEffect(() => { loadGolfers() }, [])
+  useEffect(() => {
+    loadGolfers()
+  }, [])
 
-  // add one golfer
+  // 2) Add single golfer
   const addGolfer = async (e) => {
     e.preventDefault()
     if (!newName.trim() || !newSalary) return
@@ -46,7 +48,7 @@ export default function GolfersPage() {
     setBusy(false)
   }
 
-  // delete one golfer
+  // 3) Delete one golfer
   const deleteGolfer = async (id) => {
     if (!confirm('Delete this golfer?')) return
     setBusy(true)
@@ -63,7 +65,7 @@ export default function GolfersPage() {
     setBusy(false)
   }
 
-  // batch upload CSV
+  // 4) Batch CSV upload
   const uploadCsv = async () => {
     if (!csvFile) return alert('Choose a CSV file first')
     setBusy(true)
@@ -71,26 +73,41 @@ export default function GolfersPage() {
       const text = await csvFile.text()
       const rows = text
         .split('\n')
-        .map(line => line.trim())
-        .filter(line => line.length > 0)
-      // assume first row is header if it contains non-numeric second column
+        .map(l => l.trim())
+        .filter(l => l)
       const start = rows[0].toLowerCase().startsWith('name') ? 1 : 0
-      const data = rows.slice(start).map(line => {
-        const [name, salary] = line.split(',').map(s => s.trim())
+      const data = rows.slice(start).map(l => {
+        const [name, salary] = l.split(',').map(s => s.trim())
         return { name, salary: +salary }
       })
       const { error } = await supabase
         .from('golfers')
         .insert(data)
       if (error) throw error
-      await loadGolfers()
       setCsvFile(null)
+      await loadGolfers()
     } catch (err) {
       console.error(err)
       alert('CSV upload failed: ' + err.message)
-    } finally {
-      setBusy(false)
     }
+    setBusy(false)
+  }
+
+  // 5) Clear all golfers
+  const clearAllGolfers = async () => {
+    if (!confirm('This will delete ALL golfers. Continue?')) return
+    setBusy(true)
+    const { error } = await supabase
+      .from('golfers')
+      .delete()
+      .neq('id', 0) // or simply .delete() to remove every row
+    if (error) {
+      console.error(error)
+      alert('Clear all failed: ' + error.message)
+    } else {
+      await loadGolfers()
+    }
+    setBusy(false)
   }
 
   if (loading) {
@@ -142,8 +159,8 @@ export default function GolfersPage() {
           </button>
         </form>
 
-        {/* Batch CSV Upload */}
-        <div className="flex items-end gap-4">
+        {/* Batch CSV & Clear All Controls */}
+        <div className="flex flex-wrap items-end gap-4">
           <div>
             <label className="block text-sm font-medium text-dark-green">
               Upload CSV (name,salary)
@@ -161,6 +178,14 @@ export default function GolfersPage() {
             className="bg-dark-green text-white px-4 py-2 rounded disabled:opacity-50"
           >
             Upload CSV
+          </button>
+
+          <button
+            onClick={clearAllGolfers}
+            disabled={busy}
+            className="ml-auto bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded"
+          >
+            Clear All Golfers
           </button>
         </div>
 
