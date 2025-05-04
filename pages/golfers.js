@@ -223,9 +223,9 @@ export default function GolfersPage() {
                 <tr
                   key={g.id}
                   className="
-                    odd:bg-cream       /* off-white striping for odd rows */
+                    odd:bg-gray-200       /* off-white striping for odd rows */
                     even:bg-white      /* white for even rows */
-                    hover:bg-gray-100  /* light hover highlight */
+                    // hover:bg-gray-100  /* light hover highlight */
                     divide-x divide-gray-200
                   "
                 >
