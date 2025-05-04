@@ -1,16 +1,15 @@
 // pages/admin.js
-
-import dynamic from 'next/dynamic'
 import { useState, useEffect } from 'react'
+import dynamic from 'next/dynamic'
 import 'react-quill/dist/quill.snow.css'
 
-// ── Dynamically import react-quill **and** register our size/color/bg attributors
+// ── 1) Dynamically import ReactQuill *and* register our custom attributors before it ever mounts:
 const ReactQuill = dynamic(
   () =>
     import('react-quill').then((QuillModule) => {
       const Quill = QuillModule.Quill
 
-      // 1) exact-pixel font-size attributor
+      // Register exact-pixel sizes
       const Size = Quill.import('attributors/style/size')
       Size.whitelist = [
         '8px','10px','12px','14px','16px','18px',
@@ -18,65 +17,66 @@ const ReactQuill = dynamic(
       ]
       Quill.register(Size, true)
 
-      // 2) color & background attributors
+      // Register color & background
       Quill.register(Quill.import('attributors/style/color'),      true)
       Quill.register(Quill.import('attributors/style/background'), true)
 
-      // 3) return the ReactQuill component
       return QuillModule.default
     }),
   { ssr: false }
 )
 
 export default function Admin() {
-  const [loading, setLoading] = useState(true)
-  const [settings, setSettings] = useState({})
-  const [formTitle, setFormTitle] = useState('')
-  const [rules, setRules] = useState('')
-  const [backgrounds, setBackgrounds] = useState([])
-  const [activeBgKey, setActiveBgKey] = useState('')
-  const [activeBgUrl, setActiveBgUrl] = useState('')
-  const [bgFile, setBgFile] = useState(null)
-  const [uploading, setUploading] = useState(false)
+  const [loading,     setLoading]      = useState(true)
+  const [settings,    setSettings]     = useState({})
+  const [formTitle,   setFormTitle]    = useState('')
+  const [rules,       setRules]        = useState('')
+  const [backgrounds, setBackgrounds]  = useState([])
+  const [activeBgKey, setActiveBgKey]  = useState('')
+  const [activeBgUrl, setActiveBgUrl]  = useState('')
+  const [bgFile,      setBgFile]       = useState(null)
+  const [uploading,   setUploading]    = useState(false)
 
-  // ── Load settings & backgrounds once
+  // ── Load settings + backgrounds on mount
   useEffect(() => {
-    async function loadAll() {
+    async function load() {
       try {
-        const st = await fetch('/api/admin/settings')
-        const { settings: s } = await st.json()
+        // settings
+        const res1 = await fetch('/api/admin/settings')
+        const { settings: s } = await res1.json()
         setSettings(s)
         setFormTitle(s.form_title || '')
         setRules(s.rules || '')
 
-        const bgRes = await fetch('/api/admin/backgrounds')
-        const { backgrounds: bgs } = await bgRes.json()
+        // backgrounds
+        const res2 = await fetch('/api/admin/backgrounds')
+        const { backgrounds: bgs } = await res2.json()
         setBackgrounds(bgs)
       } catch (e) {
         console.error(e)
-        alert('Error loading admin data—see console')
+        alert('Failed to load admin data')
       } finally {
         setLoading(false)
       }
     }
-    loadAll()
+    load()
   }, [])
 
-  // ── Sync the selected background into state
+  // ── Sync the selected background key/url
   useEffect(() => {
     if (!loading && settings.background_image) {
       setActiveBgUrl(settings.background_image)
-      const found = backgrounds.find((b) => b.publicUrl === settings.background_image)
+      const found = backgrounds.find(b => b.publicUrl === settings.background_image)
       if (found) setActiveBgKey(found.key)
     }
   }, [loading, settings, backgrounds])
 
-  // ── generic setting‐save helper
+  // ── Generic setting save helper
   const saveSetting = async (key, value) => {
     const res = await fetch('/api/admin/settings', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ key, value }),
+      headers: { 'Content-Type':'application/json' },
+      body: JSON.stringify({ key, value })
     })
     if (!res.ok) {
       const { error } = await res.json()
@@ -85,17 +85,17 @@ export default function Admin() {
     alert('Saved!')
   }
 
-  // ── background upload
+  // ── Upload a new background image
   const uploadBg = async () => {
     if (!bgFile) return alert('Pick a file first')
     setUploading(true)
     try {
       const fd = new FormData()
       fd.append('image', bgFile)
-      const res = await fetch('/api/admin/backgrounds/upload', { method: 'POST', body: fd })
+      const res = await fetch('/api/admin/backgrounds/upload', { method:'POST', body:fd })
       if (!res.ok) throw new Error((await res.json()).error)
       const { key, publicUrl } = await res.json()
-      setBackgrounds((prev) => [{ key, publicUrl }, ...prev])
+      setBackgrounds(b => [{ key, publicUrl }, ...b])
       setBgFile(null)
       setActiveBgKey(key)
       setActiveBgUrl(publicUrl)
@@ -108,37 +108,39 @@ export default function Admin() {
     }
   }
 
-  // ── apply selected as background
+  // ── Set the selected image as current background
   const handleSetBackground = () => {
-    if (!activeBgKey) return alert('Select an image first')
+    if (!activeBgKey) return alert('Select one first')
     saveSetting('background_image', activeBgUrl)
   }
 
-  // ── delete selected
+  // ── Delete the selected background
   const handleDeleteSelected = async () => {
     if (!activeBgKey) return alert('Select one to delete')
     if (!confirm('Really delete this image?')) return
     try {
       const res = await fetch('/api/admin/backgrounds/delete', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ key: activeBgKey }),
+        method:'POST',
+        headers:{ 'Content-Type':'application/json' },
+        body: JSON.stringify({ key:activeBgKey })
       })
       if (!res.ok) throw new Error((await res.json()).error)
-      setBackgrounds((b) => b.filter((x) => x.key !== activeBgKey))
+      setBackgrounds(b => b.filter(x => x.key !== activeBgKey))
       if (settings.background_image === activeBgUrl) {
         setActiveBgKey('')
         setActiveBgUrl('')
-        await saveSetting('background_image', '')
+        await saveSetting('background_image','')
       }
       alert('Deleted!')
     } catch (e) {
       console.error(e)
-      alert('Delete failed: ' + e.message)
+      alert('Delete failed: '+e.message)
     }
   }
 
-  if (loading) return <p className="p-6 text-center">Loading admin…</p>
+  if (loading) {
+    return <p className="p-6 text-center">Loading admin…</p>
+  }
 
   return (
     <div className="p-8 max-w-4xl mx-auto space-y-8 bg-gray-50 text-dark-green font-sans">
@@ -151,7 +153,7 @@ export default function Admin() {
           type="text"
           className="w-full border p-2 rounded"
           value={formTitle}
-          onChange={(e) => setFormTitle(e.target.value)}
+          onChange={e => setFormTitle(e.target.value)}
         />
         <button
           onClick={() => saveSetting('form_title', formTitle)}
@@ -171,44 +173,19 @@ export default function Admin() {
             onChange={setRules}
             modules={{
               toolbar: [
-                [
-                  {
-                    size: [
-                      '8px',
-                      '10px',
-                      '12px',
-                      '14px',
-                      '16px',
-                      '18px',
-                      '20px',
-                      '22px',
-                      '24px',
-                      '28px',
-                      '32px',
-                      '36px',
-                      '48px',
-                    ],
-                  },
-                ],
-                ['bold', 'italic', 'underline', 'strike'],
-                [{ color: [] }, { background: [] }],
-                [{ list: 'ordered' }, { list: 'bullet' }],
-                ['link', 'image'],
-                ['clean'],
-              ],
+                [{ size: [
+                  '8px','10px','12px','14px','16px','18px',
+                  '20px','22px','24px','28px','32px','36px','48px'
+                ] }],
+                ['bold','italic','underline','strike'],
+                [{ color:[] },{ background:[] }],
+                [{ list:'ordered' },{ list:'bullet' }],
+                ['link','image'],['clean']
+              ]
             }}
             formats={[
-              'size',
-              'bold',
-              'italic',
-              'underline',
-              'strike',
-              'color',
-              'background',
-              'list',
-              'bullet',
-              'link',
-              'image',
+              'size','bold','italic','underline','strike',
+              'color','background','list','bullet','link','image'
             ]}
           />
         </div>
@@ -228,7 +205,7 @@ export default function Admin() {
           <input
             type="file"
             accept="image/*"
-            onChange={(e) => setBgFile(e.target.files?.[0] || null)}
+            onChange={e => setBgFile(e.target.files?.[0] || null)}
             className="border p-1 rounded"
           />
           <button
