@@ -83,6 +83,32 @@ export default function Admin() {
     await save('background_image', publicUrl)
   }
 
+
+  // DELETE handler
+  async function deleteBackground(key, publicUrl) {
+    if (!confirm('Delete this background?')) return
+    const res = await fetch('/api/admin/backgrounds/delete', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ key })
+    })
+    if (!res.ok) {
+      const { error } = await res.json()
+      return alert('Delete failed: ' + error)
+    }
+    // remove locally
+    setBackgrounds((bgs) => bgs.filter((b) => b.key !== key))
+    // if it was the active, clear it
+    if (publicUrl === activeBg) {
+      setActiveBg('')
+      await fetch('/api/admin/settings', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ key: 'background_image', value: '' })
+      })
+    }
+  }
+
   if (loading) return <p className="p-6 text-center">Loading admin…</p>
 
   return (
@@ -153,27 +179,44 @@ export default function Admin() {
           </button>
         </div>
         <div className="grid grid-cols-3 gap-4 mt-4">
-          {backgrounds.map(bg => (
-            <label key={bg.key} className="cursor-pointer border p-2 rounded">
+          {backgrounds.map(({ key, publicUrl }) => (
+            <div key={key} className="relative cursor-pointer border p-2 rounded">
+              {/* DELETE button */}
+              <button
+                onClick={() => deleteBackground(key, publicUrl)}
+                className="absolute top-1 right-1 text-red-500 hover:text-red-700"
+                title="Delete"
+              >
+                🗑
+              </button>
+
               <img
-                src={bg.publicUrl}
+                src={publicUrl}
                 alt=""
                 className="h-24 w-full object-cover rounded"
               />
-              <div className="mt-1 flex items-center">
+
+              <label className="mt-1 flex items-center">
                 <input
                   type="radio"
                   name="activeBg"
-                  value={bg.publicUrl}
-                  checked={activeBg===bg.publicUrl}
-                  onChange={()=>{
-                    setActiveBg(bg.publicUrl)
-                    save('background_image', bg.publicUrl)
+                  value={publicUrl}
+                  checked={activeBg === publicUrl}
+                  onChange={async () => {
+                    setActiveBg(publicUrl)
+                    await fetch('/api/admin/settings', {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({
+                        key: 'background_image',
+                        value: publicUrl
+                      })
+                    })
                   }}
                 />
-                <span className="ml-2 truncate">{bg.key}</span>
-              </div>
-            </label>
+                <span className="ml-2 truncate">{key}</span>
+              </label>
+            </div>
           ))}
         </div>
       </section>
