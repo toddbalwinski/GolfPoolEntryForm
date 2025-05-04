@@ -205,7 +205,7 @@ export default function GolfersPage() {
               border-collapse
             "
           >
-            <thead className="bg-cream/50">
+            <thead className="bg-dark-green">
               <tr className="divide-x divide-gray-200">
                 {['ID','Name','Salary','Actions'].map((h) => (
                   <th
@@ -220,15 +220,7 @@ export default function GolfersPage() {
 
             <tbody className="divide-y divide-gray-200">
               {golfers.map((g) => (
-                <tr
-                  key={g.id}
-                  className="
-                    odd:bg-gray-200       /* off-white striping for odd rows */
-                    even:bg-white      /* white for even rows */
-                    // hover:bg-gray-100  /* light hover highlight */
-                    divide-x divide-gray-200
-                  "
-                >
+                <tr key={g.id} className="odd:bg-white even:bg-gray-50">
                   <td className="px-4 py-2 text-sm text-gray-800 whitespace-nowrap">
                     {g.id}
                   </td>
