@@ -194,8 +194,18 @@ export default function GolfersPage() {
 
         {/* Golfers Table */}
         <div className="overflow-x-auto">
-          <table className="min-w-full bg-white rounded-lg border-2 border-dark-green overflow-hidden">
-            <thead>
+          <table
+            className="
+              min-w-full 
+              bg-white 
+              border-2 border-dark-green 
+              rounded-lg 
+              overflow-hidden
+              table-auto
+              border-collapse
+            "
+          >
+            <thead className="bg-cream/50">
               <tr className="divide-x divide-gray-200">
                 {['ID','Name','Salary','Actions'].map((h) => (
                   <th
@@ -212,15 +222,20 @@ export default function GolfersPage() {
               {golfers.map((g) => (
                 <tr
                   key={g.id}
-                  className="divide-x divide-gray-200 hover:bg-gray-50"
+                  className="
+                    odd:bg-cream       /* off-white striping for odd rows */
+                    even:bg-white      /* white for even rows */
+                    hover:bg-gray-100  /* light hover highlight */
+                    divide-x divide-gray-200
+                  "
                 >
-                  <td className="px-4 py-2 text-sm text-gray-700 whitespace-nowrap">
+                  <td className="px-4 py-2 text-sm text-gray-800 whitespace-nowrap">
                     {g.id}
                   </td>
-                  <td className="px-4 py-2 text-sm text-gray-700 whitespace-nowrap">
+                  <td className="px-4 py-2 text-sm text-gray-800 whitespace-nowrap">
                     {g.name}
                   </td>
-                  <td className="px-4 py-2 text-sm text-gray-700 whitespace-nowrap">
+                  <td className="px-4 py-2 text-sm text-gray-800 whitespace-nowrap">
                     ${g.salary}
                   </td>
                   <td className="px-4 py-2 text-center">
