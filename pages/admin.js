@@ -4,10 +4,34 @@ import { useState, useEffect } from 'react'
 import dynamic from 'next/dynamic'
 import 'react-quill/dist/quill.snow.css'
 
-const ReactQuill = dynamic(() => import('react-quill'), { ssr: false })
+const ReactQuill = dynamic(
+  // dynamically import ReactQuill and register our custom attributors
+  async () => {
+    if (typeof window === 'undefined') {
+      return () => null
+    }
+    const QuillModule = await import('react-quill')
+    const Quill = QuillModule.Quill
+
+    // whitelist exact pixel sizes
+    const Size = Quill.import('attributors/style/size')
+    Size.whitelist = [
+      '8px','10px','12px','14px','16px','18px',
+      '20px','22px','24px','28px','32px','36px','48px'
+    ]
+    Quill.register(Size, true)
+
+    // enable text color & background color styling
+    Quill.register(Quill.import('attributors/style/color'),      true)
+    Quill.register(Quill.import('attributors/style/background'), true)
+
+    return QuillModule.default
+  },
+  { ssr: false }
+)
 
 export default function Admin() {
-  // ── State
+  // ── state
   const [loading,      setLoading     ] = useState(true)
   const [settings,     setSettings    ] = useState({})
   const [formTitle,    setFormTitle   ] = useState('')
@@ -18,39 +42,24 @@ export default function Admin() {
   const [bgFile,       setBgFile      ] = useState(null)
   const [uploading,    setUploading   ] = useState(false)
 
-  // ── Quill setup (run once on mount)
-  useEffect(() => {
-    if (typeof window === 'undefined') return
-    const Quill = require('react-quill').Quill
-    // whitelist font sizes
-    const Size = Quill.import('attributors/style/size')
-    Size.whitelist = [
-      '8px','10px','12px','14px','16px','18px',
-      '20px','22px','24px','28px','32px','36px','48px'
-    ]
-    Quill.register(Size, true)
-    Quill.register(Quill.import('attributors/style/color'), true)
-    Quill.register(Quill.import('attributors/style/background'), true)
-  }, [])
-
-  // ── Load settings & backgrounds (run once on mount)
+  // ── load settings & backgrounds on mount
   useEffect(() => {
     async function load() {
       try {
-        // fetch settings
-        const stRes = await fetch('/api/admin/settings')
-        const { settings: s } = await stRes.json()
+        // settings
+        const st = await fetch('/api/admin/settings')
+        const { settings: s } = await st.json()
         setSettings(s)
         setFormTitle(s.form_title || '')
         setRules(s.rules || '')
 
-        // fetch backgrounds
-        const bgRes = await fetch('/api/admin/backgrounds')
-        const { backgrounds: bgs } = await bgRes.json()
+        // backgrounds
+        const bg = await fetch('/api/admin/backgrounds')
+        const { backgrounds: bgs } = await bg.json()
         setBackgrounds(bgs)
       } catch (err) {
         console.error('Admin load error:', err)
-        alert('Failed to load admin data – see console.')
+        alert('Failed to load admin data—see console.')
       } finally {
         setLoading(false)
       }
@@ -58,35 +67,30 @@ export default function Admin() {
     load()
   }, [])
 
-  // ── Sync the selected background from settings
+  // ── sync activeBgKey/url from settings once both are loaded
   useEffect(() => {
     if (!loading && settings.background_image) {
       setActiveBgUrl(settings.background_image)
-      const found = backgrounds.find(b => b.publicUrl === settings.background_image)
-      if (found) setActiveBgKey(found.key)
+      const match = backgrounds.find(b => b.publicUrl === settings.background_image)
+      if (match) setActiveBgKey(match.key)
     }
   }, [loading, settings, backgrounds])
 
-  // ── Helper to save a key/value setting
+  // ── helper to save a single key/value into settings
   const saveSetting = async (key, value) => {
-    try {
-      const res = await fetch('/api/admin/settings', {
-        method: 'POST',
-        headers: { 'Content-Type':'application/json' },
-        body: JSON.stringify({ key, value })
-      })
-      if (!res.ok) {
-        const { error } = await res.json()
-        throw new Error(error)
-      }
-      alert('Saved!')
-    } catch (e) {
-      console.error('Save setting error', e)
-      alert('Save failed: ' + e.message)
+    const res = await fetch('/api/admin/settings', {
+      method: 'POST',
+      headers: { 'Content-Type':'application/json' },
+      body: JSON.stringify({ key, value })
+    })
+    if (!res.ok) {
+      const { error } = await res.json()
+      return alert('Save failed: ' + error)
     }
+    alert('Saved!')
   }
 
-  // ── Upload a new background image
+  // ── upload a new background
   const uploadBg = async () => {
     if (!bgFile) return alert('Select a file first')
     setUploading(true)
@@ -104,7 +108,6 @@ export default function Admin() {
       const { key, publicUrl } = await res.json()
       setBackgrounds(prev => [ { key, publicUrl }, ...prev ])
       setBgFile(null)
-      // auto‐select and save
       setActiveBgKey(key)
       setActiveBgUrl(publicUrl)
       await saveSetting('background_image', publicUrl)
@@ -116,13 +119,13 @@ export default function Admin() {
     }
   }
 
-  // ── Set the currently selected image as background
+  // ── set the selected image as background
   const handleSetBackground = () => {
     if (!activeBgKey) return alert('Select an image first')
     saveSetting('background_image', activeBgUrl)
   }
 
-  // ── Delete the currently selected image
+  // ── delete the selected image
   const handleDeleteSelected = async () => {
     if (!activeBgKey) return alert('Select an image to delete')
     if (!confirm('Really delete this background?')) return
@@ -137,7 +140,6 @@ export default function Admin() {
         throw new Error(error)
       }
       setBackgrounds(bgs => bgs.filter(b => b.key !== activeBgKey))
-      // clear setting if it was active
       if (settings.background_image === activeBgUrl) {
         setActiveBgKey('')
         setActiveBgUrl('')
