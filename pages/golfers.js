@@ -10,7 +10,7 @@ export default function GolfersPage() {
   const [csvFile, setCsvFile]     = useState(null)
   const [busy, setBusy]           = useState(false)
 
-  // 1) Load all golfers
+  // Load golfers from Supabase
   const loadGolfers = async () => {
     setLoading(true)
     const { data, error } = await supabase
@@ -30,7 +30,7 @@ export default function GolfersPage() {
     loadGolfers()
   }, [])
 
-  // 2) Add single golfer
+  // Add a single golfer
   const addGolfer = async (e) => {
     e.preventDefault()
     if (!newName.trim() || !newSalary) return
@@ -42,13 +42,14 @@ export default function GolfersPage() {
       console.error(error)
       alert('Insert failed: ' + error.message)
     } else {
-      setNewName(''); setNewSalary('')
+      setNewName('')
+      setNewSalary('')
       await loadGolfers()
     }
     setBusy(false)
   }
 
-  // 3) Delete one golfer
+  // Delete one golfer
   const deleteGolfer = async (id) => {
     if (!confirm('Delete this golfer?')) return
     setBusy(true)
@@ -65,7 +66,7 @@ export default function GolfersPage() {
     setBusy(false)
   }
 
-  // 4) Batch CSV upload
+  // Batch CSV upload
   const uploadCsv = async () => {
     if (!csvFile) return alert('Choose a CSV file first')
     setBusy(true)
@@ -73,11 +74,11 @@ export default function GolfersPage() {
       const text = await csvFile.text()
       const rows = text
         .split('\n')
-        .map(l => l.trim())
-        .filter(l => l)
+        .map((l) => l.trim())
+        .filter((l) => l.length > 0)
       const start = rows[0].toLowerCase().startsWith('name') ? 1 : 0
-      const data = rows.slice(start).map(l => {
-        const [name, salary] = l.split(',').map(s => s.trim())
+      const data = rows.slice(start).map((l) => {
+        const [name, salary] = l.split(',').map((s) => s.trim())
         return { name, salary: +salary }
       })
       const { error } = await supabase
@@ -93,14 +94,13 @@ export default function GolfersPage() {
     setBusy(false)
   }
 
-  // 5) Clear all golfers
+  // Clear all golfers
   const clearAllGolfers = async () => {
     if (!confirm('This will delete ALL golfers. Continue?')) return
     setBusy(true)
     const { error } = await supabase
       .from('golfers')
-      .delete()
-      .neq('id', 0) // or simply .delete() to remove every row
+      .delete() // deletes all rows
     if (error) {
       console.error(error)
       alert('Clear all failed: ' + error.message)
@@ -131,21 +131,25 @@ export default function GolfersPage() {
           className="flex flex-wrap gap-4 items-end"
         >
           <div className="flex-1 min-w-[150px]">
-            <label className="block text-sm font-medium text-dark-green">Name</label>
+            <label className="block text-sm font-medium text-gray-800">
+              Name
+            </label>
             <input
               type="text"
               value={newName}
-              onChange={e => setNewName(e.target.value)}
+              onChange={(e) => setNewName(e.target.value)}
               className="mt-1 block w-full border border-gray-300 rounded p-2"
               required
             />
           </div>
           <div className="w-32">
-            <label className="block text-sm font-medium text-dark-green">Salary</label>
+            <label className="block text-sm font-medium text-gray-800">
+              Salary
+            </label>
             <input
               type="number"
               value={newSalary}
-              onChange={e => setNewSalary(e.target.value)}
+              onChange={(e) => setNewSalary(e.target.value)}
               className="mt-1 block w-full border border-gray-300 rounded p-2"
               required
             />
@@ -159,16 +163,16 @@ export default function GolfersPage() {
           </button>
         </form>
 
-        {/* Batch CSV & Clear All Controls */}
+        {/* CSV Upload & Clear All */}
         <div className="flex flex-wrap items-end gap-4">
           <div>
-            <label className="block text-sm font-medium text-dark-green">
+            <label className="block text-sm font-medium text-gray-800">
               Upload CSV (name,salary)
             </label>
             <input
               type="file"
               accept=".csv"
-              onChange={e => setCsvFile(e.target.files?.[0] || null)}
+              onChange={(e) => setCsvFile(e.target.files?.[0] || null)}
               className="mt-1 block"
             />
           </div>
@@ -179,11 +183,10 @@ export default function GolfersPage() {
           >
             Upload CSV
           </button>
-
           <button
             onClick={clearAllGolfers}
             disabled={busy}
-            className="ml-auto bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded"
+            className="ml-auto bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded disabled:opacity-50"
           >
             Clear All Golfers
           </button>
@@ -191,40 +194,40 @@ export default function GolfersPage() {
 
         {/* Golfers Table */}
         <div className="overflow-x-auto">
-          <table className="min-w-full table-auto border border-gray-200 bg-white">
-            <thead className="bg-gray-100">
-              <tr>
-                <th className="px-4 py-2 border-b border-gray-200 text-left text-sm font-semibold text-dark-green">
-                  ID
-                </th>
-                <th className="px-4 py-2 border-b border-gray-200 text-left text-sm font-semibold text-dark-green">
-                  Name
-                </th>
-                <th className="px-4 py-2 border-b border-gray-200 text-left text-sm font-semibold text-dark-green">
-                  Salary
-                </th>
-                <th className="px-4 py-2 border-b border-gray-200 text-center text-sm font-semibold text-dark-green">
-                  Actions
-                </th>
+          <table className="min-w-full bg-white rounded-lg border-2 border-dark-green overflow-hidden">
+            <thead>
+              <tr className="divide-x divide-gray-200">
+                {['ID','Name','Salary','Actions'].map((h) => (
+                  <th
+                    key={h}
+                    className="px-4 py-3 text-left text-sm font-semibold text-dark-green"
+                  >
+                    {h}
+                  </th>
+                ))}
               </tr>
             </thead>
-            <tbody>
+
+            <tbody className="divide-y divide-gray-200">
               {golfers.map((g) => (
-                <tr key={g.id} className="hover:bg-gray-50">
-                  <td className="px-4 py-2 border-b border-gray-200 text-sm text-dark-green whitespace-nowrap">
+                <tr
+                  key={g.id}
+                  className="divide-x divide-gray-200 hover:bg-gray-50"
+                >
+                  <td className="px-4 py-2 text-sm text-gray-700 whitespace-nowrap">
                     {g.id}
                   </td>
-                  <td className="px-4 py-2 border-b border-gray-200 text-sm text-dark-green whitespace-nowrap">
+                  <td className="px-4 py-2 text-sm text-gray-700 whitespace-nowrap">
                     {g.name}
                   </td>
-                  <td className="px-4 py-2 border-b border-gray-200 text-sm text-dark-green whitespace-nowrap">
+                  <td className="px-4 py-2 text-sm text-gray-700 whitespace-nowrap">
                     ${g.salary}
                   </td>
-                  <td className="px-4 py-2 border-b border-gray-200 text-center">
+                  <td className="px-4 py-2 text-center">
                     <button
                       onClick={() => deleteGolfer(g.id)}
                       disabled={busy}
-                      className="text-red-600 hover:text-red-800"
+                      className="text-red-600 hover:text-red-800 disabled:opacity-50"
                     >
                       Delete
                     </button>
