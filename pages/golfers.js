@@ -198,7 +198,7 @@ export default function GolfersPage() {
             className="
               min-w-full
               bg-white
-              border-2 border-dark-green 
+              border border-dark-green 
               rounded-lg 
               overflow-hidden
               table-auto
