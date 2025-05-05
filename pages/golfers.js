@@ -125,6 +125,35 @@ export default function GolfersPage() {
           All Golfers
         </h1>
 
+        {/* CSV Upload & Clear All */}
+        <div className="flex flex-wrap items-end gap-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-800">
+              Upload CSV (name,salary)
+            </label>
+            <input
+              type="file"
+              accept=".csv"
+              onChange={(e) => setCsvFile(e.target.files?.[0] || null)}
+              className="mt-1 block"
+            />
+          </div>
+          <button
+            onClick={uploadCsv}
+            disabled={busy || !csvFile}
+            className="bg-dark-green text-white px-4 py-2 rounded disabled:opacity-50"
+          >
+            Upload CSV
+          </button>
+          <button
+            onClick={clearAllGolfers}
+            disabled={busy}
+            className="ml-auto bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded disabled:opacity-50"
+          >
+            Clear All Golfers
+          </button>
+        </div>
+
         {/* Add Single Golfer */}
         <form
           onSubmit={addGolfer}
@@ -163,55 +192,13 @@ export default function GolfersPage() {
           </button>
         </form>
 
-        {/* CSV Upload & Clear All */}
-        <div className="flex flex-wrap items-end gap-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-800">
-              Upload CSV (name,salary)
-            </label>
-            <input
-              type="file"
-              accept=".csv"
-              onChange={(e) => setCsvFile(e.target.files?.[0] || null)}
-              className="mt-1 block"
-            />
-          </div>
-          <button
-            onClick={uploadCsv}
-            disabled={busy || !csvFile}
-            className="bg-dark-green text-white px-4 py-2 rounded disabled:opacity-50"
-          >
-            Upload CSV
-          </button>
-          <button
-            onClick={clearAllGolfers}
-            disabled={busy}
-            className="ml-auto bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded disabled:opacity-50"
-          >
-            Clear All Golfers
-          </button>
-        </div>
-
         {/* Golfers Table */}
-        <div className="overflow-x-auto">
-          <table
-            className="
-              min-w-full
-              bg-white
-              border border-dark-green 
-              rounded-lg 
-              overflow-hidden
-              table-auto
-              border-collapse
-            "
-          >
-            <thead className="bg-grey-30">
-              <tr className="divide-x divide-gray-200">
+        <div className="overflow-x-auto border border-dark-green rounded-lg">
+          <table className="w-full table-auto border-collapse text-sm whitespace-nowrap">
+            <thead>
+              <tr className="bg-white">
                 {['ID','Name','Salary','Actions'].map((h) => (
-                  <th
-                    key={h}
-                    className="px-4 py-3 text-left text-sm font-semibold text-dark-green"
-                  >
+                  <th key={h} className="border px-4 py-2 whitespace-nowrap">
                     {h}
                   </th>
                 ))}
@@ -221,13 +208,13 @@ export default function GolfersPage() {
             <tbody className="divide-y divide-gray-200">
               {golfers.map((g) => (
                 <tr key={g.id} className="odd:bg-white even:bg-gray-50">
-                  <td className="px-4 py-2 text-sm text-gray-800 whitespace-nowrap">
+                  <td className="border px-4 py-2 whitespace-nowrap">
                     {g.id}
                   </td>
-                  <td className="px-4 py-2 text-sm text-gray-800 whitespace-nowrap">
+                  <td className="border px-4 py-2 whitespace-nowrap">
                     {g.name}
                   </td>
-                  <td className="px-4 py-2 text-sm text-gray-800 whitespace-nowrap">
+                  <td className="border px-4 py-2 whitespace-nowrap">
                     ${g.salary}
                   </td>
                   <td className="px-4 py-2 text-center">
