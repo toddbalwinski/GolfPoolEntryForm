@@ -1,4 +1,3 @@
-// pages/golfers.js
 import { useState, useEffect } from 'react'
 import { supabase } from '../lib/supabase'
 
@@ -10,7 +9,6 @@ export default function GolfersPage() {
   const [csvFile, setCsvFile]     = useState(null)
   const [busy, setBusy]           = useState(false)
 
-  // Load golfers from Supabase
   const loadGolfers = async () => {
     setLoading(true)
     const { data, error } = await supabase
@@ -30,7 +28,6 @@ export default function GolfersPage() {
     loadGolfers()
   }, [])
 
-  // Add a single golfer
   const addGolfer = async (e) => {
     e.preventDefault()
     if (!newName.trim() || !newSalary) return
@@ -49,7 +46,6 @@ export default function GolfersPage() {
     setBusy(false)
   }
 
-  // Delete one golfer
   const deleteGolfer = async (id) => {
     if (!confirm('Delete this golfer?')) return
     setBusy(true)
@@ -66,7 +62,6 @@ export default function GolfersPage() {
     setBusy(false)
   }
 
-  // Batch CSV upload
   const uploadCsv = async () => {
     if (!csvFile) return alert('Choose a CSV file first')
     setBusy(true)
@@ -94,13 +89,13 @@ export default function GolfersPage() {
     setBusy(false)
   }
 
-  // Clear all golfers
   const clearAllGolfers = async () => {
     if (!confirm('This will delete ALL golfers. Continue?')) return
     setBusy(true)
     const { error } = await supabase
       .from('golfers')
-      .delete() // deletes all rows
+      .delete()
+      .gt('id', 0)
     if (error) {
       console.error(error)
       alert('Clear all failed: ' + error.message)
@@ -122,7 +117,7 @@ export default function GolfersPage() {
     <div className="p-6 bg-gray-50 min-h-screen">
       <div className="max-w-screen-lg mx-auto space-y-8">
         <h1 className="text-2xl font-bold text-dark-green">
-          All Golfers
+          Manage Golfers
         </h1>
 
         {/* CSV Upload & Clear All */}
@@ -154,7 +149,7 @@ export default function GolfersPage() {
           </button>
         </div>
 
-        {/* Add Single Golfer */}
+        {/* Add a Single Golfer */}
         <form
           onSubmit={addGolfer}
           className="flex flex-wrap gap-4 items-end"
