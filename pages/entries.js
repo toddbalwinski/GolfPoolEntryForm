@@ -1,4 +1,3 @@
-// pages/entries.js
 import React from 'react'
 import { useState, useEffect } from 'react'
 import { supabase } from '../lib/supabase'
@@ -10,7 +9,6 @@ export default function Entries() {
 
   useEffect(() => {
     async function load() {
-      // 1) build golfer lookup
       const { data: gfList } = await supabase
         .from('golfers')
         .select('id,name,salary')
@@ -18,7 +16,6 @@ export default function Entries() {
       gfList.forEach((g) => { map[g.id] = { name: g.name, salary: g.salary } })
       setGMap(map)
 
-      // 2) fetch entries
       const { data: enList } = await supabase
         .from('entries')
         .select('id, first_name, last_name, email, entry_name, picks')
@@ -93,23 +90,24 @@ export default function Entries() {
   return (
     <div className="p-6 max-w-screen-xl mx-auto bg-gray-50 rounded-lg space-y-4">
       <div className="flex justify-between items-center">
-        <h1 className="text-2xl font-bold text-dark-green">Form Entries</h1>
+        <h1 className="text-2xl font-bold text-dark-green">Manage Entries</h1>
+
+        {/* Export and Clear Buttons */}
         <div className="space-x-2">
           <button
             onClick={exportCsv}
-            className="bg-dark-green text-white px-4 py-2 rounded"
-          >
+            className="bg-dark-green text-white px-4 py-2 rounded">
             Export as CSV
           </button>
           <button
             onClick={clearEntries}
-            className="bg-red-600 text-white px-4 py-2 rounded"
-          >
+            className="bg-red-600 text-white px-4 py-2 rounded">
             Clear All Entries
           </button>
         </div>
       </div>
 
+      {/* Entries Table */}
       <div className="overflow-x-auto border border-dark-green rounded-lg">
         <table className="w-full table-auto border-collapse text-sm whitespace-nowrap">
           <thead>
