@@ -192,7 +192,7 @@ export default function GolfersPage() {
           <table className="w-full table-auto border-collapse text-sm whitespace-nowrap">
             <thead>
               <tr className="bg-white">
-                {['ID','Name','Salary','Actions'].map((h) => (
+                {['ID','Name','Salary','Delete'].map((h) => (
                   <th key={h} className="border px-4 py-2 whitespace-nowrap">
                     {h}
                   </th>

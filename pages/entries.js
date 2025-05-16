@@ -145,6 +145,7 @@ export default function Entries() {
                 </React.Fragment>
               ))}
               <th className="border px-4 py-2 whitespace-nowrap">Total</th>
+              <th className="border px-4 py-2 whitespace-nowrap">Delete</th>
             </tr>
           </thead>
           <tbody>
@@ -182,7 +183,7 @@ export default function Entries() {
                   <td className="border px-4 py-2 whitespace-nowrap">
                     ${total}
                   </td>
-                  <td className="px-4 py-2 text-center">
+                  <td className="border px-4 py-2 text-center">
                     <button
                       onClick={() => deleteEntry(e.id)}
                       disabled={busy}
