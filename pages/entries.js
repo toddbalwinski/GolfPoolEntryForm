@@ -83,6 +83,23 @@ export default function Entries() {
     }
   }
 
+    const deleteEntry = async (id) => {
+      if (!confirm('Are you sure you want to delete this entry?')) return
+      setBusy(true)
+      const { error } = await supabase
+        .from('entries')
+        .delete()
+        .eq('id', id)
+  
+      if (error) {
+        console.error(error)
+        alert('Delete failed: ' + error.message)
+      } else {
+        await loadEntries()
+      }
+      setBusy(false)
+    }
+
   if (loading) {
     return <p className="p-6 text-center">Loading entries…</p>
   }
@@ -163,6 +180,15 @@ export default function Entries() {
                   })}
                   <td className="border px-4 py-2 whitespace-nowrap">
                     ${total}
+                  </td>
+                  <td className="px-4 py-2 text-center">
+                    <button
+                      onClick={() => deleteEntry(e.id)}
+                      disabled={busy}
+                      className="text-red-600 hover:text-red-800 disabled:opacity-50"
+                    >
+                      Delete
+                    </button>
                   </td>
                 </tr>
               )
