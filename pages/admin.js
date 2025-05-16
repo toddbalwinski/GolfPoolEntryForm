@@ -141,7 +141,7 @@ export default function Admin() {
 
   return (
     <div className="p-8 max-w-4xl mx-auto space-y-8 bg-gray-50 text-dark-green font-sans">
-      <h1 className="text-2xl font-bold">Golf Pool Admin</h1>
+      <h1 className="text-2xl font-bold">Manage Form</h1>
 
       {/* Form Title */}
       <section>
