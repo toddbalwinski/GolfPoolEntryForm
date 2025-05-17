@@ -11,41 +11,44 @@ export default function Home() {
   const [error,     setError]     = useState(null);
   const [loading,   setLoading]   = useState(true);
 
+  const loadData = async () => {
+    setLoading(true);
+    
+    // background
+    const { data: bgSetting } = await supabase
+      .from('settings')
+      .select('value')
+      .eq('key', 'background_image')
+      .single();
+    if (bgSetting?.value) setBgImage(bgSetting.value);
+
+    // form title
+    const { data: ftSetting } = await supabase
+      .from('settings')
+      .select('value')
+      .eq('key', 'form_title')
+      .single();
+    if (ftSetting?.value) setFormTitle(ftSetting.value);
+
+    // rules
+    const { data: rSetting } = await supabase
+      .from('settings')
+      .select('value')
+      .eq('key', 'rules')
+      .single();
+    setRules(rSetting?.value || '');
+
+    // golfers
+    const { data: gf } = await supabase
+      .from('golfers')
+      .select('*')
+      .order('id', { ascending: true });
+    setGolfers(gf || []);
+
+    setLoading(false);
+  }
+
   useEffect(() => {
-    async function loadData() {
-      // background
-      const { data: bgSetting } = await supabase
-        .from('settings')
-        .select('value')
-        .eq('key', 'background_image')
-        .single();
-      if (bgSetting?.value) setBgImage(bgSetting.value);
-
-      // form title
-      const { data: ftSetting } = await supabase
-        .from('settings')
-        .select('value')
-        .eq('key', 'form_title')
-        .single();
-      if (ftSetting?.value) setFormTitle(ftSetting.value);
-
-      // rules
-      const { data: rSetting } = await supabase
-        .from('settings')
-        .select('value')
-        .eq('key', 'rules')
-        .single();
-      setRules(rSetting?.value || '');
-
-      // golfers
-      const { data: gf } = await supabase
-        .from('golfers')
-        .select('*')
-        .order('id', { ascending: true });
-      setGolfers(gf || []);
-
-      setLoading(false);
-    }
     loadData();
   }, []);
 

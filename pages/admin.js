@@ -31,25 +31,27 @@ export default function Admin() {
     setupQuill()
   }, [])
 
-  useEffect(() => {
-    async function loadAll() {
-      try {
-        let r = await fetch('/api/admin/settings')
-        let { settings: s } = await r.json()
-        setSettings(s)
-        setFormTitle(s.form_title || '')
-        setRules(s.rules || '')
+  const loadAll = async () => {
+    setLoading(true)
+    try {
+      let r = await fetch('/api/admin/settings')
+      let { settings: s } = await r.json()
+      setSettings(s)
+      setFormTitle(s.form_title || '')
+      setRules(s.rules || '')
 
-        r = await fetch('/api/admin/backgrounds')
-        let { backgrounds: bgs } = await r.json()
-        setBackgrounds(bgs)
-      } catch (e) {
-        console.error(e)
-        alert('Failed to load admin data')
-      } finally {
-        setLoading(false)
-      }
+      r = await fetch('/api/admin/backgrounds')
+      let { backgrounds: bgs } = await r.json()
+      setBackgrounds(bgs)
+    } catch (e) {
+      console.error(e)
+      alert('Failed to load admin data')
+    } finally {
+      setLoading(false)
     }
+  }
+
+  useEffect(() => {
     loadAll()
   }, [])
 

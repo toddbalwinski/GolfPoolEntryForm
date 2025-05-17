@@ -28,6 +28,7 @@ export default function Entries() {
           : e.picks
     }))
     setEntries(parsed)
+    
     setLoading(false)
   }
 
