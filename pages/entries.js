@@ -8,29 +8,31 @@ export default function Entries() {
   const [loading, setLoading] = useState(true)
   const [busy, setBusy]       = useState(false)
 
-  useEffect(() => {
-    async function load() {
-      const { data: gfList } = await supabase
-        .from('golfers')
-        .select('id,name,salary')
-      const map = {}
-      gfList.forEach((g) => { map[g.id] = { name: g.name, salary: g.salary } })
-      setGMap(map)
+  const loadEntries = async () => {
+    setLoading(true)
+    const { data: gfList } = await supabase
+      .from('golfers')
+      .select('id,name,salary')
+    const map = {}
+    gfList.forEach((g) => { map[g.id] = { name: g.name, salary: g.salary } })
+    setGMap(map)
 
-      const { data: enList } = await supabase
-        .from('entries')
-        .select('id, first_name, last_name, email, entry_name, picks')
-      const parsed = (enList || []).map((e) => ({
-        ...e,
-        picks:
-          typeof e.picks === 'string'
-            ? JSON.parse(e.picks)
-            : e.picks
-      }))
-      setEntries(parsed)
-      setLoading(false)
-    }
-    load()
+    const { data: enList } = await supabase
+      .from('entries')
+      .select('id, first_name, last_name, email, entry_name, picks')
+    const parsed = (enList || []).map((e) => ({
+      ...e,
+      picks:
+        typeof e.picks === 'string'
+          ? JSON.parse(e.picks)
+          : e.picks
+    }))
+    setEntries(parsed)
+    setLoading(false)
+  }
+
+  useEffect(() => {
+    loadEntries()
   }, [])
 
   const exportCsv = () => {
