@@ -47,7 +47,7 @@ export default function GolfersPage() {
   }
 
   const deleteGolfer = async (id) => {
-    if (!confirm('Delete this golfer?')) return
+    if (!confirm('Are you sure you want to delete this golfer?')) return
     setBusy(true)
     const { error } = await supabase
       .from('golfers')
@@ -107,7 +107,7 @@ export default function GolfersPage() {
 
   if (loading) {
     return (
-      <div className="p-6 text-center text-dark-green">
+      <div className="p-6 text-center">
         Loading golfers…
       </div>
     )
