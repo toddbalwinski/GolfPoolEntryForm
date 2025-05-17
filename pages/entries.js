@@ -91,6 +91,7 @@ export default function Entries() {
       .from('entries')
       .delete()
       .eq('id', id)
+  
     if (error) {
       console.error(error)
       alert('Delete failed: ' + error.message)
@@ -101,11 +102,7 @@ export default function Entries() {
   }
 
   if (loading) {
-    return (
-      <div className="p-6 text-center">
-        Loading entries…
-      </div>
-    )
+    return <p className="p-6 text-center">Loading entries…</p>
   }
 
   return (
@@ -186,9 +183,9 @@ export default function Entries() {
                   <td className="border px-4 py-2 whitespace-nowrap">
                     ${total}
                   </td>
-                  <td className="px-4 py-2 text-center">
+                  <td className="border px-4 py-2 text-center">
                     <button
-                      onClick={() => deleteEntry(g.id)}
+                      onClick={() => deleteEntry(e.id)}
                       disabled={busy}
                       className="text-red-600 hover:text-red-800 disabled:opacity-50"
                     >
