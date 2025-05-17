@@ -104,7 +104,12 @@ export default function Entries() {
   }
 
   if (loading) {
-    return <p className="p-6 text-center">Loading entries…</p>
+    return (
+      <div 
+        className="p-6 text-center"> 
+          Loading entries…
+      </div>
+    )
   }
 
   return (
