@@ -186,18 +186,18 @@ export default function Entries() {
                   <td className="border px-4 py-2 whitespace-nowrap">
                     ${total}
                   </td>
-                </tr>
-              )
-            })}
-            <td className="border px-4 py-2 text-center">
+                  <td className="px-4 py-2 text-center">
                     <button
-                      onClick={() => deleteEntry(e.id)}
+                      onClick={() => deleteEntry(g.id)}
                       disabled={busy}
                       className="text-red-600 hover:text-red-800 disabled:opacity-50"
                     >
                       Delete
                     </button>
                   </td>
+                </tr>
+              )
+            })}
           </tbody>
         </table>
       </div>
