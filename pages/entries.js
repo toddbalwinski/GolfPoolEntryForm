@@ -136,7 +136,7 @@ export default function Entries() {
       <div className="overflow-x-auto border border-dark-green rounded-lg">
         <table className="w-full table-auto border-collapse text-sm whitespace-nowrap">
           <thead>
-            <tr className="bg-white">
+            <tr className="bg-gray-100">
               <th className="border px-4 py-2 whitespace-nowrap">First Name</th>
               <th className="border px-4 py-2 whitespace-nowrap">Last Name</th>
               <th className="border px-4 py-2 whitespace-nowrap">Email</th>
