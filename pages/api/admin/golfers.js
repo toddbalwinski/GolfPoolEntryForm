@@ -1,9 +1,7 @@
-// pages/api/admin/golfers.js
 import { supabaseAdmin } from '../../../lib/supabase';
 
 export default async function handler(req, res) {
   if (req.method === 'GET') {
-    // list all golfers
     const { data, error } = await supabaseAdmin
       .from('golfers')
       .select('*')
@@ -13,7 +11,6 @@ export default async function handler(req, res) {
   }
 
   if (req.method === 'POST') {
-    // only name & salary; id will come back from DB
     const { name, salary } = req.body;
     if (!name || typeof salary !== 'number') {
       return res.status(400).json({ error: 'Missing name or salary' });

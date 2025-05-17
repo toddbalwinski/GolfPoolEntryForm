@@ -1,4 +1,3 @@
-// pages/api/admin/backgrounds/index.js
 import { supabaseAdmin } from '../../../../lib/supabase'
 
 export default async function handler(req, res) {
@@ -8,7 +7,6 @@ export default async function handler(req, res) {
       .json({ error: `Method ${req.method} Not Allowed` })
   }
 
-  // 1) List all files in your "backgrounds" bucket
   const { data: files, error: listErr } = await supabaseAdmin
     .storage
     .from('backgrounds')
@@ -19,7 +17,6 @@ export default async function handler(req, res) {
     return res.status(500).json({ error: listErr.message })
   }
 
-  // 2) Turn each filename into a public URL
   const backgrounds = files.map((f) => {
     const { data } = supabaseAdmin
       .storage
@@ -27,10 +24,9 @@ export default async function handler(req, res) {
       .getPublicUrl(f.name)
     return {
       key: f.name,
-      publicUrl: data.publicUrl   // <-- note data.publicUrl, not publicURL
+      publicUrl: data.publicUrl
     }
   })
 
-  // 3) Return as JSON
   res.status(200).json({ backgrounds })
 }

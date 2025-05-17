@@ -1,4 +1,3 @@
-// components/GolferGrid.js
 import React from 'react'
 
 export default function GolferGrid({ golfers, picks, onToggle }) {

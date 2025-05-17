@@ -1,7 +1,6 @@
 import { supabase } from '../../lib/supabase';
 
 export default async function handler(req, res) {
-  // (_you could protect this with a simple token in ?key=…_)
   const { data, error } = await supabase
     .from('entries')
     .select('*')
@@ -9,7 +8,6 @@ export default async function handler(req, res) {
 
   if (error) return res.status(500).send(error.message);
 
-  // build CSV
   const header = ['First','Last','Email','Entry','Picks','Created'].join(',');
   const rows = data.map(r => [
     r.first_name,

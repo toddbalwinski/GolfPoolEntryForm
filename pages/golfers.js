@@ -2,12 +2,12 @@ import { useState, useEffect } from 'react'
 import { supabase } from '../lib/supabase'
 
 export default function GolfersPage() {
-  const [golfers, setGolfers]     = useState([])
-  const [loading, setLoading]     = useState(true)
-  const [newName, setNewName]     = useState('')
+  const [golfers,   setGolfers]   = useState([])
+  const [loading,   setLoading]   = useState(true)
+  const [newName,   setNewName]   = useState('')
   const [newSalary, setNewSalary] = useState('')
-  const [csvFile, setCsvFile]     = useState(null)
-  const [busy, setBusy]           = useState(false)
+  const [csvFile,   setCsvFile]   = useState(null)
+  const [busy,      setBusy]      = useState(false)
 
   const loadGolfers = async () => {
     setLoading(true)

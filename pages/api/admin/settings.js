@@ -1,4 +1,3 @@
-// pages/api/admin/settings.js
 import { supabaseAdmin } from '../../../lib/supabase'
 
 export default async function handler(req, res) {
@@ -7,7 +6,6 @@ export default async function handler(req, res) {
       .from('settings')
       .select('key, value')
     if (error) return res.status(500).json({ error: error.message })
-    // convert to { key: value }
     const settings = Object.fromEntries(data.map(({ key, value }) => [key, value]))
     return res.status(200).json({ settings })
   }

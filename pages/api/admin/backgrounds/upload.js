@@ -1,5 +1,5 @@
 import nextConnect from 'next-connect'
-import multer      from 'multer'
+import multer from 'multer'
 import { supabaseAdmin } from '../../../../lib/supabase'
 
 const upload = multer({ storage: multer.memoryStorage() })

@@ -1,4 +1,3 @@
-// pages/api/submit.js
 import { supabase } from '../../lib/supabase';
 
 export default async function handler(req, res) {
@@ -6,7 +5,6 @@ export default async function handler(req, res) {
 
   const { first, last, email, entryName, picks } = req.body;
 
-  // Re‑validate against current DB salaries
   const { data: golferRows, error: gErr } = await supabase
     .from('golfers')
     .select('id,salary')

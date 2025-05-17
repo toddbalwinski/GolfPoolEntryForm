@@ -1,9 +1,7 @@
-// pages/api/admin/entries/reset.js
 import { supabaseAdmin } from '../../../../lib/supabase';
 
 export default async function handler(req, res) {
   if (req.method === 'POST') {
-    // Must include a filter, so we delete all rows with id > 0
     const { error } = await supabaseAdmin
       .from('entries')
       .delete()

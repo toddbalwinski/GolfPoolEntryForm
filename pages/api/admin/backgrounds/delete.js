@@ -1,4 +1,3 @@
-// pages/api/admin/backgrounds/delete.js
 import { supabaseAdmin } from '../../../../lib/supabase'
 
 export default async function handler(req, res) {

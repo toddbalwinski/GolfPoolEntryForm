@@ -4,9 +4,9 @@ import { supabase } from '../lib/supabase'
 
 export default function Entries() {
   const [entries, setEntries] = useState([])
-  const [gMap, setGMap]       = useState({})
+  const [gMap,    setGMap]    = useState({})
   const [loading, setLoading] = useState(true)
-  const [busy, setBusy]       = useState(false)
+  const [busy,    setBusy]    = useState(false)
 
   const loadEntries = async () => {
     setLoading(true)

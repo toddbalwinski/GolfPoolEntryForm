@@ -1,4 +1,3 @@
-// pages/admin.js
 import { useState, useEffect } from 'react'
 import dynamic from 'next/dynamic'
 import 'react-quill/dist/quill.snow.css'
@@ -6,36 +5,32 @@ import 'react-quill/dist/quill.snow.css'
 const ReactQuill = dynamic(() => import('react-quill'), { ssr: false })
 
 export default function Admin() {
-  const [loading,      setLoading]     = useState(true)
-  const [settings,     setSettings]    = useState({})
-  const [formTitle,    setFormTitle]   = useState('')
-  const [rules,        setRules]       = useState('')
-  const [backgrounds,  setBackgrounds] = useState([])
-  const [activeBgKey,  setActiveBgKey] = useState('')
-  const [activeBgUrl,  setActiveBgUrl] = useState('')
-  const [bgFile,       setBgFile]      = useState(null)
-  const [uploading,    setUploading]   = useState(false)
+  const [loading,     setLoading]     = useState(true)
+  const [settings,    setSettings]    = useState({})
+  const [formTitle,   setFormTitle]   = useState('')
+  const [rules,       setRules]       = useState('')
+  const [backgrounds, setBackgrounds] = useState([])
+  const [activeBgKey, setActiveBgKey] = useState('')
+  const [activeBgUrl, setActiveBgUrl] = useState('')
+  const [bgFile,      setBgFile]      = useState(null)
+  const [uploading,   setUploading]   = useState(false)
 
-  // ── 1) Register Quill attributors on the client only
   useEffect(() => {
     async function setupQuill() {
       const mod = await import('react-quill')
-      const Quill = mod.default.Quill     // ← grab Quill off the default export
-      // pixel-perfect size attributor
+      const Quill = mod.default.Quill
       const Size = Quill.import('attributors/style/size')
       Size.whitelist = [
         '8px','10px','12px','14px','16px','18px',
         '20px','22px','24px','28px','32px','36px','48px'
       ]
       Quill.register(Size, true)
-      // color & background
       Quill.register(Quill.import('attributors/style/color'),      true)
       Quill.register(Quill.import('attributors/style/background'), true)
     }
     setupQuill()
   }, [])
 
-  // ── 2) Load all settings + backgrounds
   useEffect(() => {
     async function loadAll() {
       try {
@@ -58,7 +53,6 @@ export default function Admin() {
     loadAll()
   }, [])
 
-  // Keep activeBgUrl/Key in sync with settings
   useEffect(() => {
     if (!loading && settings.background_image) {
       setActiveBgUrl(settings.background_image)
@@ -67,7 +61,6 @@ export default function Admin() {
     }
   }, [loading, settings, backgrounds])
 
-  // Save one setting
   const saveSetting = async (key, value) => {
     const res = await fetch('/api/admin/settings', {
       method: 'POST',
@@ -81,7 +74,6 @@ export default function Admin() {
     alert('Saved!')
   }
 
-  // Upload a new bg image
   const uploadBg = async () => {
     if (!bgFile) return alert('Pick a file first')
     setUploading(true)
@@ -107,13 +99,11 @@ export default function Admin() {
     }
   }
 
-  // Set the selected bg as active
   const handleSetBackground = () => {
     if (!activeBgKey) return alert('Select one first')
     saveSetting('background_image', activeBgUrl)
   }
 
-  // Delete selected bg from storage
   const handleDeleteSelected = async () => {
     if (!activeBgKey) return alert('Select one to delete')
     if (!confirm('Really delete this image?')) return

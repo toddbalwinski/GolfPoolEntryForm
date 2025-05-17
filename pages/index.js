@@ -1,16 +1,15 @@
-// pages/index.js
 import { useState, useEffect, useMemo } from 'react';
 import GolferGrid from '../components/GolferGrid';
 import { supabase } from '../lib/supabase';
 
 export default function Home() {
-  const [bgImage, setBgImage]       = useState('/images/quail-hollow.jpg');
-  const [formTitle, setFormTitle]   = useState('Golf Pool Entry Form');
-  const [rules, setRules]           = useState('');
-  const [golfers, setGolfers]       = useState([]);
-  const [picks, setPicks]           = useState([]);
-  const [error, setError]           = useState(null);
-  const [loading, setLoading]       = useState(true);
+  const [bgImage,   setBgImage]   = useState('/images/quail-hollow.jpg');
+  const [formTitle, setFormTitle] = useState('Golf Pool Entry Form');
+  const [rules,     setRules]     = useState('');
+  const [golfers,   setGolfers]   = useState([]);
+  const [picks,     setPicks]     = useState([]);
+  const [error,     setError]     = useState(null);
+  const [loading,   setLoading]   = useState(true);
 
   useEffect(() => {
     async function loadData() {
@@ -30,7 +29,7 @@ export default function Home() {
         .single();
       if (ftSetting?.value) setFormTitle(ftSetting.value);
 
-      // rules HTML
+      // rules
       const { data: rSetting } = await supabase
         .from('settings')
         .select('value')
@@ -38,7 +37,7 @@ export default function Home() {
         .single();
       setRules(rSetting?.value || '');
 
-      // golfers in ID order
+      // golfers
       const { data: gf } = await supabase
         .from('golfers')
         .select('*')

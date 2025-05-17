@@ -1,4 +1,3 @@
-// tailwind.config.js
 module.exports = {
   theme: {
     extend: {
@@ -18,4 +17,3 @@ module.exports = {
     require('@tailwindcss/typography'),
   ],
 };
-  
