@@ -146,7 +146,7 @@ export default function Admin() {
         />
         <button
           onClick={() => saveSetting('form_title', formTitle)}
-          className="mt-2 bg-dark-green text-white px-4 py-2 rounded"
+          className="mt-2 bg-dark-green hover:bg-dark-green/90 text-white px-4 py-2 rounded"
         >
           Save Title
         </button>
@@ -180,7 +180,7 @@ export default function Admin() {
         </div>
         <button
           onClick={() => saveSetting('rules', rules)}
-          className="mt-2 bg-dark-green text-white px-4 py-2 rounded"
+          className="mt-2 bg-dark-green hover:bg-dark-green/90 text-white px-4 py-2 rounded"
         >
           Save Rules
         </button>
@@ -199,7 +199,7 @@ export default function Admin() {
           <button
             onClick={uploadBg}
             disabled={uploading}
-            className="bg-dark-green text-white px-4 py-2 rounded disabled:opacity-50"
+            className="bg-dark-green hover:bg-dark-green/90 text-white px-4 py-2 rounded disabled:opacity-50"
           >
             {uploading ? 'Uploading…' : 'Upload'}
           </button>
@@ -235,7 +235,7 @@ export default function Admin() {
           <button
             onClick={handleSetBackground}
             disabled={!activeBgKey}
-            className="bg-dark-green text-white px-4 py-2 rounded disabled:opacity-50"
+            className="bg-dark-green hover:bg-dark-green/90 text-white px-4 py-2 rounded disabled:opacity-50"
           >
             Set as Background
           </button>

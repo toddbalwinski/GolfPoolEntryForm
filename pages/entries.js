@@ -122,12 +122,12 @@ export default function Entries() {
         <div className="space-x-2">
           <button
             onClick={exportCsv}
-            className="bg-dark-green text-white px-4 py-2 rounded">
+            className="bg-dark-green hover:bg-dark-green/90 text-white px-4 py-2 rounded">
             Export as CSV
           </button>
           <button
             onClick={clearEntries}
-            className="bg-red-600 text-white px-4 py-2 rounded">
+            className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded">
             Clear All Entries
           </button>
         </div>
@@ -195,7 +195,7 @@ export default function Entries() {
                     <button
                       onClick={() => deleteEntry(e.id)}
                       disabled={busy}
-                      className="text-red-600 hover:text-red-800 disabled:opacity-50"
+                      className="text-red-600 hover:text-red-700 disabled:opacity-50"
                     >
                       Delete
                     </button>

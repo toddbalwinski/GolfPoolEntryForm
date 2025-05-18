@@ -147,7 +147,7 @@ export default function Home() {
               <div className="text-center">
                 <button
                   onClick={() => setReceipt(null)}
-                  className="mt-4 bg-dark-green text-white px-6 py-2 rounded-lg"
+                  className="mt-4 bg-dark-green text-white px-6 py-2 rounded-lg hover:bg-dark-green/90"
                 >
                   Back to Form
                 </button>
@@ -195,13 +195,13 @@ export default function Home() {
                   name="first"
                   placeholder="First Name"
                   required
-                  className="border border-dark-green/50 rounded-lg p-3 placeholder-black/90 focus:outline-none focus:ring-2 focus:ring-dark-green"
+                  className="border border-dark-green/50 rounded-lg p-3 placeholder-black/50 focus:outline-none focus:ring-2 focus:ring-dark-green"
                 />
                 <input
                   name="last"
                   placeholder="Last Name"
                   required
-                  className="border border-dark-green/50 rounded-lg p-3 placeholder-black/80 focus:outline-none focus:ring-2 focus:ring-dark-green"
+                  className="border border-dark-green/50 rounded-lg p-3 placeholder-black/50 focus:outline-none focus:ring-2 focus:ring-dark-green"
                 />
               </div>
 

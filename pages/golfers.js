@@ -136,7 +136,7 @@ export default function GolfersPage() {
           <button
             onClick={uploadCsv}
             disabled={busy || !csvFile}
-            className="bg-dark-green text-white px-4 py-2 rounded disabled:opacity-50"
+            className="bg-dark-green text-white px-4 py-2 rounded disabled:opacity-50 hover:bg-dark-green/90"
           >
             Upload CSV
           </button>
@@ -181,7 +181,7 @@ export default function GolfersPage() {
           <button
             type="submit"
             disabled={busy}
-            className="bg-dark-green text-white px-4 py-2 rounded disabled:opacity-50"
+            className="bg-dark-green text-white px-4 py-2 rounded disabled:opacity-50 hover:bg-dark-green/90"
           >
             Add Golfer
           </button>
@@ -216,7 +216,7 @@ export default function GolfersPage() {
                     <button
                       onClick={() => deleteGolfer(g.id)}
                       disabled={busy}
-                      className="text-red-600 hover:text-red-800 disabled:opacity-50"
+                      className="text-red-600 hover:text-red-700 disabled:opacity-50"
                     >
                       Delete
                     </button>
