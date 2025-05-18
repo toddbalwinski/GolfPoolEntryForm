@@ -1,54 +1,70 @@
+// pages/index.js
+
 import { useState, useEffect, useMemo } from 'react'
 import GolferGrid from '../components/GolferGrid'
 import { supabase } from '../lib/supabase'
 
 export default function Home() {
-  const [bgImage, setBgImage] = useState('/images/quail-hollow.jpg')
-  const [rules, setRules]     = useState('')
-  const [golfers, setGolfers] = useState([])
-  const [picks, setPicks]     = useState([])
-  const [error, setError]     = useState(null)
-  const [loading, setLoading] = useState(true)
-  const [receipt, setReceipt] = useState(null)
+  const [bgImage, setBgImage]   = useState('/images/quail-hollow.jpg')
+  const [rules, setRules]       = useState('')
+  const [golfers, setGolfers]   = useState([])
+  const [picks, setPicks]       = useState([])
+  const [error, setError]       = useState(null)
+  const [loading, setLoading]   = useState(true)
+  const [receipt, setReceipt]   = useState(null)
 
   useEffect(() => {
     async function loadData() {
-      // 1) Load background setting
-      const { data: bgSetting, error: bgError } = await supabase
+      // ----- 1) LOAD BACKGROUND SETTING -----
+      const { data: bgSetting, error: bgErr } = await supabase
         .from('settings')
         .select('value')
         .eq('key', 'background_image')
         .single()
-      if (bgError) console.error(bgError)
-      else if (bgSetting?.value) {
-        // ensure it starts with '/'
-        setBgImage(bgSetting.value.startsWith('/') 
-          ? bgSetting.value 
-          : `/${bgSetting.value}`)
+      if (bgErr) {
+        console.error('bg load error', bgErr)
+      } else if (bgSetting?.value) {
+        // if it's already an absolute URL, use it; otherwise fetch from your storage bucket
+        const val = bgSetting.value
+        if (val.startsWith('http')) {
+          setBgImage(val)
+        } else {
+          const {
+            data: { publicUrl },
+            error: urlErr,
+          } = supabase
+            .storage
+            .from('backgrounds')       // <-- your bucket name
+            .getPublicUrl(val)          // <-- val is the filename/key in that bucket
+          if (urlErr) console.error('publicUrl error', urlErr)
+          else setBgImage(publicUrl)
+        }
       }
 
-      // 2) Load rules setting
-      const { data: rSetting, error: rError } = await supabase
+      // ----- 2) LOAD RULES HTML -----
+      const { data: rSetting, error: rErr } = await supabase
         .from('settings')
         .select('value')
         .eq('key', 'rules')
         .single()
-      if (rError) console.error(rError)
+      if (rErr) console.error('rules load error', rErr)
       else setRules(rSetting?.value || '')
 
-      // 3) Load golfers list
-      const { data: gfList, error: gfError } = await supabase
+      // ----- 3) LOAD GOLFERS -----
+      const { data: gfList, error: gfErr } = await supabase
         .from('golfers')
         .select('*')
-        .order('name', { ascending: true })
-      if (gfError) console.error(gfError)
+        .order('id', { ascending: true })   // now ordered by ID
+      if (gfErr) console.error('golfers load error', gfErr)
       else setGolfers(gfList || [])
 
       setLoading(false)
     }
+
     loadData()
   }, [])
 
+  // compute total salary
   const totalSalary = useMemo(
     () =>
       picks.reduce((sum, id) => {
@@ -58,6 +74,7 @@ export default function Home() {
     [picks, golfers]
   )
 
+  // toggle a pick
   const handleToggle = (id) => (e) => {
     setError(null)
     setPicks((prev) =>
@@ -69,15 +86,14 @@ export default function Home() {
     )
   }
 
+  // form submit
   const handleSubmit = async (e) => {
     e.preventDefault()
     setError(null)
     if (picks.length !== 6) return setError('Please pick exactly 6 golfers.')
     if (totalSalary > 100) return setError(`Salary cap exceeded: $${totalSalary}`)
 
-    const { first, last, email, entryName } = Object.fromEntries(
-      new FormData(e.target)
-    )
+    const { first, last, email, entryName } = Object.fromEntries(new FormData(e.target))
     const res = await fetch('/api/submit', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -89,7 +105,7 @@ export default function Home() {
       return setError(body.error || 'Submission failed')
     }
 
-    // build receipt
+    // build a receipt for the takeover screen
     const pickedGolfers = picks
       .map((id) => golfers.find((g) => g.id === id))
       .filter(Boolean)
@@ -99,6 +115,7 @@ export default function Home() {
     setPicks([])
   }
 
+  // loading state
   if (loading) {
     return (
       <div
@@ -115,7 +132,7 @@ export default function Home() {
     )
   }
 
-  // RECEIPT TAKEOVER
+  // receipt takeover
   if (receipt) {
     return (
       <div
@@ -129,18 +146,10 @@ export default function Home() {
               <h2 className="text-2xl font-bold text-dark-green text-center">
                 Entry Receipt
               </h2>
-              <p>
-                <strong>Name:</strong> {receipt.first} {receipt.last}
-              </p>
-              <p>
-                <strong>Email:</strong> {receipt.email}
-              </p>
-              <p>
-                <strong>Entry Name:</strong> {receipt.entryName}
-              </p>
-              <p>
-                <strong>Total Salary:</strong> ${receipt.totalSalary}
-              </p>
+              <p><strong>Name:</strong> {receipt.first} {receipt.last}</p>
+              <p><strong>Email:</strong> {receipt.email}</p>
+              <p><strong>Entry Name:</strong> {receipt.entryName}</p>
+              <p><strong>Total Salary:</strong> ${receipt.totalSalary}</p>
               <ul className="list-disc list-inside">
                 {receipt.picks.map((g, i) => (
                   <li key={g.id}>
@@ -163,7 +172,7 @@ export default function Home() {
     )
   }
 
-  // MAIN FORM
+  // main form
   return (
     <div
       className="relative h-screen bg-no-repeat bg-cover bg-center bg-fixed"
@@ -176,6 +185,7 @@ export default function Home() {
               Golf Pool Entry Form
             </h1>
 
+            {/* Rules */}
             <section className="bg-cream p-4 rounded-lg">
               <div
                 className="prose prose-sm max-w-none text-dark-green leading-snug
@@ -188,7 +198,7 @@ export default function Home() {
             {error && <p className="text-red-600">{error}</p>}
 
             <form onSubmit={handleSubmit} className="space-y-5">
-              {/* contact fields */}
+              {/* contact */}
               <div className="grid grid-cols-2 gap-4">
                 <input
                   name="first"
@@ -203,6 +213,7 @@ export default function Home() {
                   className="border border-dark-green/50 rounded-lg p-3 placeholder-dark-green/70 focus:outline-none focus:ring-2 focus:ring-dark-green"
                 />
               </div>
+
               <input
                 name="email"
                 type="email"
@@ -217,11 +228,13 @@ export default function Home() {
                 className="w-full border border-dark-green/50 rounded-lg p-3 placeholder-dark-green/70 focus:outline-none focus:ring-2 focus:ring-dark-green"
               />
 
+              {/* counter */}
               <p className="text-sm">
-                Picks: <strong>{picks.length}/6</strong> &nbsp;|&nbsp; Total
-                Salary: <strong>${totalSalary}</strong>/100
+                Picks: <strong>{picks.length}/6</strong> &nbsp;|&nbsp;
+                Total Salary: <strong>${totalSalary}</strong>/100
               </p>
 
+              {/* grid */}
               <GolferGrid
                 golfers={golfers}
                 picks={picks}
