@@ -24,8 +24,8 @@ export default function GolferGrid({ golfers, picks, onToggle }) {
                 border 
                 rounded-lg 
                 p-2 
-                hover:black/40
-                ${isPicked ? 'border-dark-green black/20' : 'border-dark-green/50'}
+                hover:bg-black/40
+                ${isPicked ? 'border-dark-green bg-black/20' : 'border-dark-green/50'}
               `}
             >
               <input
