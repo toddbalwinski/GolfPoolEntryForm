@@ -3,6 +3,8 @@ import GolferGrid from '../components/GolferGrid'
 import { supabase } from '../lib/supabase'
 
 export default function Home() {
+  const [bgImage,   setBgImage]   = useState('/images/quail-hollow.jpg');
+  const [formTitle, setFormTitle] = useState('Golf Pool Entry Form');
   const [rules, setRules]       = useState('')
   const [golfers, setGolfers]   = useState([])
   const [picks, setPicks]       = useState([])
