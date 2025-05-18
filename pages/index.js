@@ -128,7 +128,7 @@ export default function Home() {
         <div className="absolute inset-0 bg-cream/75" />
         <div className="relative h-full overflow-y-auto">
           <div className="max-w-screen-md mx-auto p-6">
-            <div className="bg-white rounded-2xl shadow-lg p-8 space-y-6">
+            <div className="bg-white rounded-2xl shadow-lg p-8 space-y-3">
               <h2 className="text-2xl font-bold text-dark-green text-center">
                 Entry Receipt
               </h2>
@@ -136,6 +136,7 @@ export default function Home() {
               <p><strong>Email:</strong> {receipt.email}</p>
               <p><strong>Entry Name:</strong> {receipt.entryName}</p>
               <p><strong>Total Salary:</strong> ${receipt.totalSalary}</p>
+              <p><strong>Golfers:</strong></p>
               <ul className="list-disc list-inside">
                 {receipt.picks.map((g, i) => (
                   <li key={g.id}>
