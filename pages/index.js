@@ -5,7 +5,6 @@ import GolferGrid from '../components/GolferGrid'
 import { supabase } from '../lib/supabase'
 
 export default function Home() {
-  const [bgImage, setBgImage]   = useState('/images/quail-hollow.jpg')
   const [rules, setRules]       = useState('')
   const [golfers, setGolfers]   = useState([])
   const [picks, setPicks]       = useState([])
@@ -54,7 +53,8 @@ export default function Home() {
       const { data: gfList, error: gfErr } = await supabase
         .from('golfers')
         .select('*')
-        .order('id', { ascending: true })   // now ordered by ID
+        .order('salary', { ascending: false })
+        .order('name',   { ascending: true });
       if (gfErr) console.error('golfers load error', gfErr)
       else setGolfers(gfList || [])
 
