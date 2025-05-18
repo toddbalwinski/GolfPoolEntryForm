@@ -25,8 +25,6 @@ export default function Admin() {
         '20px','22px','24px','28px','32px','36px','48px'
       ]
       Quill.register(Size, true)
-      Quill.register(Quill.import('attributors/style/color'),      true)
-      Quill.register(Quill.import('attributors/style/background'), true)
     }
     setupQuill()
   }, [])
@@ -167,14 +165,11 @@ export default function Admin() {
                   '20px','22px','24px','28px','32px','36px','48px'
                 ] }],
                 ['bold','italic','underline','strike'],
-                [{ color: [] }, { background: [] }],
                 [{ list: 'ordered' }, { list: 'bullet' }],
-                ['link','image'], ['clean'],
               ]
             }}
             formats={[
-              'size','bold','italic','underline','strike',
-              'color','background','list','bullet','link','image'
+              'size','bold','italic','underline','strike','list','bullet'
             ]}
           />
         </div>
