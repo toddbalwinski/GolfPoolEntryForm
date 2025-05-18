@@ -195,13 +195,13 @@ export default function Home() {
                   name="first"
                   placeholder="First Name"
                   required
-                  className="border border-dark-green/50 rounded-lg p-3 placeholder-black/70 focus:outline-none focus:ring-2 focus:ring-dark-green"
+                  className="border border-dark-green/50 rounded-lg p-3 placeholder-black/90 focus:outline-none focus:ring-2 focus:ring-dark-green"
                 />
                 <input
                   name="last"
                   placeholder="Last Name"
                   required
-                  className="border border-dark-green/50 rounded-lg p-3 placeholder-black/70 focus:outline-none focus:ring-2 focus:ring-dark-green"
+                  className="border border-dark-green/50 rounded-lg p-3 placeholder-black/80 focus:outline-none focus:ring-2 focus:ring-dark-green"
                 />
               </div>
 
@@ -210,13 +210,13 @@ export default function Home() {
                 type="email"
                 placeholder="Email Address"
                 required
-                className="w-full border border-dark-green/50 rounded-lg p-3 placeholder-black/70 focus:outline-none focus:ring-2 focus:ring-dark-green"
+                className="w-full border border-dark-green/50 rounded-lg p-3 placeholder-black/50 focus:outline-none focus:ring-2 focus:ring-dark-green"
               />
               <input
                 name="entryName"
                 placeholder="Entry Name"
                 required
-                className="w-full border border-dark-green/50 rounded-lg p-3 placeholder-black/70 focus:outline-none focus:ring-2 focus:ring-dark-green"
+                className="w-full border border-dark-green/50 rounded-lg p-3 placeholder-black/50 focus:outline-none focus:ring-2 focus:ring-dark-green"
               />
 
               <p className="text-base">
