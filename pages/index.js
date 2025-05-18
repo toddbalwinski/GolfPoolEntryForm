@@ -125,7 +125,7 @@ export default function Home() {
         className="relative h-screen bg-no-repeat bg-cover bg-center bg-fixed"
         style={{ backgroundImage: `url('${bgImage}')` }}
       >
-        <div className="absolute inset-0 bg-cream/75" />
+        <div className="absolute inset-0"/>
         <div className="relative h-full overflow-y-auto">
           <div className="max-w-screen-md mx-auto p-6">
             <div className="bg-white rounded-2xl shadow-lg p-8">
@@ -140,7 +140,7 @@ export default function Home() {
               <ul className="list-disc list-inside">
                 {receipt.picks.map((g, i) => (
                   <li key={g.id}>
-                    {i + 1}. {g.name} — ${g.salary}
+                    {i + 1}. {g.name} - ${g.salary}
                   </li>
                 ))}
               </ul>
@@ -174,11 +174,11 @@ export default function Home() {
             </h1>
 
             {/* Rules */}
-            <section className="bg-cream p-4 rounded-lg border-2 border-dark-green">
+            <section className="p-4 rounded-lg border-2 border-dark-green">
               <div
                 className="
                   prose prose-sm
-                  max-w-none w-full text-dark-green
+                  max-w-none w-full
                   leading-snug
                   prose-p:mb-1 prose-p:first:mt-0 prose-p:last:mb-0
                   prose-li:mb-1 prose-ul:space-y-0
@@ -195,13 +195,13 @@ export default function Home() {
                   name="first"
                   placeholder="First Name"
                   required
-                  className="border border-dark-green/50 rounded-lg p-3 placeholder-dark-green/70 focus:outline-none focus:ring-2 focus:ring-dark-green"
+                  className="border border-dark-green/50 rounded-lg p-3 placeholder-black/70 focus:outline-none focus:ring-2 focus:ring-dark-green"
                 />
                 <input
                   name="last"
                   placeholder="Last Name"
                   required
-                  className="border border-dark-green/50 rounded-lg p-3 placeholder-dark-green/70 focus:outline-none focus:ring-2 focus:ring-dark-green"
+                  className="border border-dark-green/50 rounded-lg p-3 placeholder-black/70 focus:outline-none focus:ring-2 focus:ring-dark-green"
                 />
               </div>
 
@@ -210,13 +210,13 @@ export default function Home() {
                 type="email"
                 placeholder="Email Address"
                 required
-                className="w-full border border-dark-green/50 rounded-lg p-3 placeholder-dark-green/70 focus:outline-none focus:ring-2 focus:ring-dark-green"
+                className="w-full border border-dark-green/50 rounded-lg p-3 placeholder-black/70 focus:outline-none focus:ring-2 focus:ring-dark-green"
               />
               <input
                 name="entryName"
                 placeholder="Entry Name"
                 required
-                className="w-full border border-dark-green/50 rounded-lg p-3 placeholder-dark-green/70 focus:outline-none focus:ring-2 focus:ring-dark-green"
+                className="w-full border border-dark-green/50 rounded-lg p-3 placeholder-black/70 focus:outline-none focus:ring-2 focus:ring-dark-green"
               />
 
               <p className="text-base">
