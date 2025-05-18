@@ -3,56 +3,61 @@ import GolferGrid from '../components/GolferGrid'
 import { supabase } from '../lib/supabase'
 
 export default function Home() {
-  // ── State
   const [bgImage, setBgImage] = useState('/images/quail-hollow.jpg')
-  const [rules,   setRules]   = useState('')
+  const [rules, setRules]     = useState('')
   const [golfers, setGolfers] = useState([])
-  const [picks,   setPicks]   = useState([])
-  const [error,   setError]   = useState(null)
+  const [picks, setPicks]     = useState([])
+  const [error, setError]     = useState(null)
   const [loading, setLoading] = useState(true)
-
-  // receipt state: when non-null, we show the receipt page
   const [receipt, setReceipt] = useState(null)
 
-  // ── Load initial data
   useEffect(() => {
-    async function load() {
-      const [{ data: bg }] = await supabase
+    async function loadData() {
+      // 1) Load background setting
+      const { data: bgSetting, error: bgError } = await supabase
         .from('settings')
         .select('value')
         .eq('key', 'background_image')
         .single()
-      if (bg?.value) setBgImage(bg.value)
+      if (bgError) console.error(bgError)
+      else if (bgSetting?.value) {
+        // ensure it starts with '/'
+        setBgImage(bgSetting.value.startsWith('/') 
+          ? bgSetting.value 
+          : `/${bgSetting.value}`)
+      }
 
-      const [{ data: r }] = await supabase
+      // 2) Load rules setting
+      const { data: rSetting, error: rError } = await supabase
         .from('settings')
         .select('value')
         .eq('key', 'rules')
         .single()
-      setRules(r?.value || '')
+      if (rError) console.error(rError)
+      else setRules(rSetting?.value || '')
 
-      const { data: list } = await supabase
+      // 3) Load golfers list
+      const { data: gfList, error: gfError } = await supabase
         .from('golfers')
         .select('*')
         .order('name', { ascending: true })
-      setGolfers(list || [])
+      if (gfError) console.error(gfError)
+      else setGolfers(gfList || [])
 
       setLoading(false)
     }
-    load()
+    loadData()
   }, [])
 
-  // ── Compute total salary
   const totalSalary = useMemo(
     () =>
       picks.reduce((sum, id) => {
-        const g = golfers.find((x) => x.id === id)
+        const g = golfers.find((g) => g.id === id)
         return sum + (g?.salary || 0)
       }, 0),
     [picks, golfers]
   )
 
-  // ── Toggle picks
   const handleToggle = (id) => (e) => {
     setError(null)
     setPicks((prev) =>
@@ -60,26 +65,19 @@ export default function Home() {
         ? prev.length < 6
           ? [...prev, id]
           : prev
-        : prev.filter((x) => x !== id)
+        : prev.filter((p) => p !== id)
     )
   }
 
-  // ── Form submit
   const handleSubmit = async (e) => {
     e.preventDefault()
     setError(null)
-    // validate
-    if (picks.length !== 6) {
-      return setError('Please pick exactly 6 golfers.')
-    }
-    if (totalSalary > 100) {
-      return setError(`Salary cap exceeded: $${totalSalary}`)
-    }
-    // gather form fields
+    if (picks.length !== 6) return setError('Please pick exactly 6 golfers.')
+    if (totalSalary > 100) return setError(`Salary cap exceeded: $${totalSalary}`)
+
     const { first, last, email, entryName } = Object.fromEntries(
       new FormData(e.target)
     )
-    // send to API
     const res = await fetch('/api/submit', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -87,26 +85,20 @@ export default function Home() {
     })
     const body = await res.json()
     if (!res.ok) {
+      console.error(body)
       return setError(body.error || 'Submission failed')
     }
-    // build receipt object
+
+    // build receipt
     const pickedGolfers = picks
       .map((id) => golfers.find((g) => g.id === id))
       .filter(Boolean)
-    setReceipt({
-      first,
-      last,
-      email,
-      entryName,
-      picks: pickedGolfers,
-      totalSalary,
-    })
-    // clear form state
-    setPicks([])
+    setReceipt({ first, last, email, entryName, totalSalary, picks: pickedGolfers })
+
     e.target.reset()
+    setPicks([])
   }
 
-  // ── Loading screen
   if (loading) {
     return (
       <div
@@ -123,7 +115,7 @@ export default function Home() {
     )
   }
 
-  // ── Receipt full‐page takeover
+  // RECEIPT TAKEOVER
   if (receipt) {
     return (
       <div
@@ -171,7 +163,7 @@ export default function Home() {
     )
   }
 
-  // ── Main form
+  // MAIN FORM
   return (
     <div
       className="relative h-screen bg-no-repeat bg-cover bg-center bg-fixed"
@@ -184,10 +176,9 @@ export default function Home() {
               Golf Pool Entry Form
             </h1>
 
-            {/* Rules */}
             <section className="bg-cream p-4 rounded-lg">
               <div
-                className="prose prose-sm max-w-none w-full text-dark-green leading-snug
+                className="prose prose-sm max-w-none text-dark-green leading-snug
                            prose-p:mb-1 prose-p:first:mt-0 prose-p:last:mb-0
                            prose-li:mb-1 prose-ul:space-y-0"
                 dangerouslySetInnerHTML={{ __html: rules }}
@@ -197,7 +188,7 @@ export default function Home() {
             {error && <p className="text-red-600">{error}</p>}
 
             <form onSubmit={handleSubmit} className="space-y-5">
-              {/* Contact Info */}
+              {/* contact fields */}
               <div className="grid grid-cols-2 gap-4">
                 <input
                   name="first"
@@ -212,7 +203,6 @@ export default function Home() {
                   className="border border-dark-green/50 rounded-lg p-3 placeholder-dark-green/70 focus:outline-none focus:ring-2 focus:ring-dark-green"
                 />
               </div>
-
               <input
                 name="email"
                 type="email"
@@ -220,7 +210,6 @@ export default function Home() {
                 required
                 className="w-full border border-dark-green/50 rounded-lg p-3 placeholder-dark-green/70 focus:outline-none focus:ring-2 focus:ring-dark-green"
               />
-
               <input
                 name="entryName"
                 placeholder="Entry Name"
@@ -228,13 +217,11 @@ export default function Home() {
                 className="w-full border border-dark-green/50 rounded-lg p-3 placeholder-dark-green/70 focus:outline-none focus:ring-2 focus:ring-dark-green"
               />
 
-              {/* Counter */}
               <p className="text-sm">
                 Picks: <strong>{picks.length}/6</strong> &nbsp;|&nbsp; Total
                 Salary: <strong>${totalSalary}</strong>/100
               </p>
 
-              {/* Golfer Grid */}
               <GolferGrid
                 golfers={golfers}
                 picks={picks}
