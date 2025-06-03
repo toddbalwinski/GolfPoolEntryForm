@@ -130,7 +130,7 @@ export default function Admin() {
   if (loading) return <p className="p-6 text-center">Loading admin…</p>
 
   return (
-    <div className="p-8 max-w-4xl mx-auto space-y-8 bg-gray-50 text-dark-green font-sans">
+    <div className="p-8 max-w-4xl mx-auto space-y-8 bg-gray-50 font-sans">
       <h1 className="text-2xl font-bold">Manage Form</h1>
 
       {/* Form Title */}
