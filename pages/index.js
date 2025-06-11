@@ -84,10 +84,16 @@ export default function Home() {
     }
 
     const { first, last, email, entryName } = Object.fromEntries(new FormData(e.target))
+
+    const sortedPicks = [...picks].sort((a, b) => {
+      const sa = golfers.find((g) => g.id === a)?.salary || 0
+      const sb = golfers.find((g) => g.id === b)?.salary || 0
+      return sb - sa
+    })
     const res = await fetch('/api/submit', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ first, last, email, entryName, picks }),
+      body: JSON.stringify({ first, last, email, entryName, picks: sortedPicks}),
     })
     const body = await res.json()
     if (!res.ok) {
